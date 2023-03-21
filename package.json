@@ -1,36 +1,46 @@
 {
-  "name": "do-it",
-  "version": "0.1.0",
-  "private": true,
-  "engines": {
-	"node": ">=16.0.0",
-    "npm": ">=8.0.0"
-  },
-  "description": "",
-  "keywords": [],
-  "license": "ISC",
-  "author": "Mohamed Ashraf Othman - mohamedashrafothman@gmail.com",
-  "main": "src/bin/www.js",
-  "scripts": {
-    "clean": "rimraf build",
-    "prebuild": "npm run clean",
-    "build": "npx tsc",
-    "dev": "nodemon",
-    "start": "node ./build/bin/www.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mohamedashrafothman/do-it.git"
-  },
-  "bugs": {
-    "url": "https://github.com/mohamedashrafothman/do-it/issues"
-  },
-  "homepage": "https://github.com/mohamedashrafothman/do-it#readme",
-  "devDependencies": {
-    "@types/node": "^18.15.5",
-    "nodemon": "^2.0.21",
-    "rimraf": "^4.4.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.0.2"
-  }
+	"name": "do-it",
+	"version": "0.1.0",
+	"private": true,
+	"engines": {
+		"node": ">=16.0.0",
+		"npm": ">=8.0.0"
+	},
+	"description": "",
+	"keywords": [],
+	"license": "ISC",
+	"author": "Mohamed Ashraf Othman - mohamedashrafothman@gmail.com",
+	"main": "build/bin/www.js",
+	"scripts": {
+		"clean": "rimraf build",
+		"prebuild": "npm run clean",
+		"build": "npx tsc",
+		"dev": "nodemon",
+		"start": "node ./build/bin/www.js",
+		"lint": "eslint ./src/**/*.ts",
+		"prepare": "husky install"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/mohamedashrafothman/do-it.git"
+	},
+	"bugs": {
+		"url": "https://github.com/mohamedashrafothman/do-it/issues"
+	},
+	"homepage": "https://github.com/mohamedashrafothman/do-it#readme",
+	"devDependencies": {
+		"@commitlint/cli": "^17.4.4",
+		"@commitlint/config-conventional": "^17.4.4",
+		"@types/node": "^18.15.5",
+		"@typescript-eslint/eslint-plugin": "^5.56.0",
+		"@typescript-eslint/parser": "^5.56.0",
+		"eslint": "^8.36.0",
+		"husky": "^8.0.3",
+		"nodemon": "^2.0.21",
+		"prettier": "2.8.5",
+		"rimraf": "^4.4.0",
+		"standard-version": "^9.5.0",
+		"ts-node": "^10.9.1",
+		"typescript": "^5.0.2"
+	}
 }
