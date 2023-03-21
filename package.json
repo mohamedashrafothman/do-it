@@ -1,0 +1,31 @@
+{
+  "name": "do-it",
+  "version": "0.1.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "Mohamed Ashraf Othman - mohamedashrafothman@gmail.com",
+  "main": "src/bin/www.js",
+  "scripts": {
+    "clean": "rimraf build",
+    "prebuild": "npm run clean",
+    "build": "npx tsc",
+    "dev": "nodemon",
+    "start": "node ./build/bin/www.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mohamedashrafothman/do-it.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mohamedashrafothman/do-it/issues"
+  },
+  "homepage": "https://github.com/mohamedashrafothman/do-it#readme",
+  "devDependencies": {
+    "@types/node": "^18.15.5",
+    "nodemon": "^2.0.21",
+    "rimraf": "^4.4.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2"
+  }
+}
