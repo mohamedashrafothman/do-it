@@ -1,25 +1,12 @@
 {
+	"extends": "@tsconfig/node16/tsconfig.json",
 	"compilerOptions": {
 		/* Visit https://aka.ms/tsconfig to read more about this file */
-		"target": "ES6",
-		"lib": ["es6"],
-		"module": "commonjs",
-		"rootDir": "src",
-		"moduleResolution": "node",
-		"baseUrl": "src",
-		"resolveJsonModule": true,
-		"allowJs": true,
-		"outDir": "build",
-		"isolatedModules": true,
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"strict": true,
-		"noFallthroughCasesInSwitch": true,
-		"skipLibCheck": true,
-		"sourceMap": true,
-		"rootDirs": ["src"]
+		"rootDir": "./src",
+		"baseUrl": "./src",
+		"outDir": "./build",
+		"rootDirs": ["./src"]
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", "build"]
+	"include": ["./src"],
+	"exclude": ["./node_modules", "./build"]
 }
