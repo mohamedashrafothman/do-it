@@ -10,7 +10,6 @@ const middleware = (req: Request, res: Response, next: NextFunction) => {
 	res.locals.user = req.user || null;
 	res.locals.lang = req.cookies.lang || req.setLocale("en");
 	res.locals.csrfToken = (req?.csrfToken && req.csrfToken()) || null;
-	res.locals.roles = vars.roles || [];
 	res.locals.moment = moment;
 	next();
 };

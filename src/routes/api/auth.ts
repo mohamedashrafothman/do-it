@@ -41,13 +41,13 @@ router
 	.all(allowMethods(["get"]), passport.authenticate("jwt", { session: false }))
 	.get(authController.getResendEmailVerification);
 router
-	.route(`/:provider(${Object.keys(vars.auth.strategies).join("|")})`)
+	.route(`/:provider(${Object.keys(vars.auth.strategies.social).join("|")})`)
 	.all(allowMethods(["post"]), (req, res, next) =>
 		req.headers.authorization ? passport.authenticate("jwt", { session: false })(req, res, next) : next()
 	)
 	.post(authController.validator("social-user"), authController.postSocialUser);
 router
-	.route(`/:provider(${Object.keys(vars.auth.strategies).join("|")})/unlink`)
+	.route(`/:provider(${Object.keys(vars.auth.strategies.social).join("|")})/unlink`)
 	.all(allowMethods(["get"]), passport.authenticate("jwt", { session: false }))
 	.get(authController.getSocialUnlink);
 

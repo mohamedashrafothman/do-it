@@ -37,10 +37,10 @@ passport.use(
 passport.use(
 	new FacebookStrategy(
 		{
-			clientID: vars.auth.strategies.facebook.clientId,
-			clientSecret: vars.auth.strategies.facebook.secret,
-			callbackURL: vars.auth.strategies.facebook.callbackUrl,
-			profileFields: vars.auth.strategies.facebook.profileFields,
+			clientID: vars.auth.strategies.social.facebook.clientId,
+			clientSecret: vars.auth.strategies.social.facebook.secret,
+			callbackURL: vars.auth.strategies.social.facebook.callbackUrl,
+			profileFields: vars.auth.strategies.social.facebook.profileFields,
 			passReqToCallback: true,
 		},
 		authController.passportFacebookStrategy
@@ -51,10 +51,10 @@ passport.use(
 passport.use(
 	new GoogleStrategy(
 		{
-			clientID: vars.auth.strategies.google.clientId,
-			clientSecret: vars.auth.strategies.google.secret,
-			callbackURL: vars.auth.strategies.google.callbackUrl,
-			scope: vars.auth.strategies.google.profileFields,
+			clientID: vars.auth.strategies.social.google.clientId,
+			clientSecret: vars.auth.strategies.social.google.secret,
+			callbackURL: vars.auth.strategies.social.google.callbackUrl,
+			scope: vars.auth.strategies.social.google.profileFields,
 			passReqToCallback: true,
 		},
 		authController.passportGoogleStrategy

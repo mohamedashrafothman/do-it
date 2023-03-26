@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
 import slug from "mongoose-slug-updater";
-import isEmail from "validator/lib/isEmail";
+import isEmail from "validator/lib/isEmail.js";
 import IUser from "../interfaces/User.interface";
 import vars from "../utils/vars";
 
@@ -38,7 +38,6 @@ const UserSchema: Schema<IUserDocument, object, IUserDocument> = new Schema(
 		picture: { type: String },
 		is_active: { type: Boolean, default: false },
 		is_verified: { type: Boolean, default: false },
-		role: { type: String, enum: [...Object.values(vars.roles)], default: vars.roles.user },
 		google: { type: String, default: undefined },
 		facebook: { type: String, default: undefined },
 	},

@@ -6,7 +6,6 @@ export type CompoundResponseType<T> = {
 	pageTitle?: string;
 	title?: string;
 	description?: string;
-	isWebView?: boolean;
 	status?: number;
 	entities?: {
 		data?: T | T[];
@@ -36,10 +35,4 @@ export const isAPIHeaders = (req: Request) =>
 /**
  * construct response object
  */
-export const compoundResponse = <T = void>({
-	isWebView = true,
-	...restOfOptions
-}: CompoundResponseType<T>): CompoundResponseType<T> => ({
-	...(isWebView && { isWebView }),
-	...restOfOptions,
-});
+export const compoundResponse = <T = void>(options: CompoundResponseType<T>): CompoundResponseType<T> => options;

@@ -6,7 +6,6 @@ import jsonwebtoken, { type JwtPayload, type VerifyErrors } from "jsonwebtoken";
 import passport, { type Profile } from "passport";
 import { type VerifiedCallback } from "passport-jwt";
 import { type IVerifyOptions } from "passport-local";
-import qs from "qs";
 import Email from "../models/Email";
 import Token from "../models/Token";
 import User, { type IUserDocument } from "../models/User";
@@ -142,20 +141,23 @@ const AuthController = {
 				return [];
 		}
 	},
-	passportSerializeUser: (user: IUserDocument, done: (err: any, id?: any) => void) => done(null, user),
+	passportSerializeUser: (user: any, done: any) => done(null, user?._id),
 	passportDeserializeUser: async (
 		_id: IUserDocument["_id"],
-		done: (err: any, user?: IUserDocument | false | null) => void
-	) => done({ ...(await to(User.findOne({ _id }))) }),
+		done: (err: Error | null, user?: IUserDocument | false | null) => void
+	) => {
+		const [userError, user] = await to(User.findOne({ _id }));
+		if (userError) return done(userError);
+		if (!user) return done(new Error("User Not Found"));
+		done(null, user);
+	},
 	passportLocalStrategy: async (
 		req: Request,
 		email: IUserDocument["email"],
 		password: IUserDocument["password"],
 		done: (error: any, user?: Express.User | false, options?: IVerifyOptions) => void
 	) => {
-		const [error, user] = await to(
-			User.findOne({ email: email.toLowerCase(), role: { $in: [vars.roles.admin, vars.roles.moderator] } })
-		);
+		const [error, user] = await to(User.findOne({ email: email.toLowerCase() }));
 		if (error) done(error);
 		if (!user) {
 			req.flash("danger", "Your credentials doesn't match our records");
@@ -195,8 +197,10 @@ const AuthController = {
 				return done(null);
 			}
 
-			// eslint-disable-next-line prefer-const
-			let [userError, user] = await to(User.findOne({ _id: req.user._id }));
+			let userError = null;
+			let user;
+
+			[userError, user] = await to(User.findOne({ _id: req.user._id }));
 			if (userError) return done(userError);
 			if (!user) return done(new Error("No User Found"));
 
@@ -205,7 +209,6 @@ const AuthController = {
 				...(!user?.name && profile?.displayName ? { name: profile.displayName } : {}),
 				is_verified: true,
 				is_active: true,
-				...(!user?.role ? { role: vars.roles.moderator } : {}),
 			});
 
 			const [tokenError, token] = await to(Token.findOne({ user: user._id, kind: vars.tokenTypes.google }));
@@ -232,9 +235,7 @@ const AuthController = {
 			return done(null, user);
 		}
 
-		const [existsUserError, existsUser] = await to(
-			User.findOne({ google: profile?.id, role: vars.roles.moderator })
-		);
+		const [existsUserError, existsUser] = await to(User.findOne({ google: profile?.id }));
 		if (existsUserError) return done(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
@@ -254,13 +255,8 @@ const AuthController = {
 		if (existsEmail) {
 			req.flash(
 				"danger",
-				`There is already an account using this email address with ${existsEmail.role.toLowerCase()} role. Sign in to that account and link it with Google manually from Account Settings.`
+				`There is already an account using this email address. Sign in to that account and link it with Google manually from Account Settings.`
 			);
-			if (existsEmail.role === vars.roles.moderator)
-				req.flash(
-					"info",
-					`Redirect to <strong><a href="http://${req.headers.host}/dashboard/pages/auth/password/forgot">Forgot Password?</a></strong> to reset your password.`
-				);
 			return done(null);
 		}
 
@@ -270,7 +266,6 @@ const AuthController = {
 			google: profile.id,
 			is_active: true,
 			is_verified: true,
-			role: vars.roles.moderator,
 		};
 
 		const [newUserError, newUser] = await to(User.create(user));
@@ -319,7 +314,6 @@ const AuthController = {
 				...(!user?.picture ? { picture: `https://graph.facebook.com/${profile.id}/picture?type=large` } : {}),
 				is_verified: true,
 				is_active: true,
-				...(!user?.role ? { role: vars.roles.moderator } : {}),
 			});
 
 			const [tokenError, token] = await to(Token.findOne({ user: user._id, kind: vars.tokenTypes.facebook }));
@@ -368,13 +362,8 @@ const AuthController = {
 		if (existsEmail) {
 			req.flash(
 				"danger",
-				`There is already an account using this email address with ${existsEmail.role.toLowerCase()} role. Sign in to that account and link it with Google manually from Account Settings.`
+				`There is already an account using this email address. Sign in to that account and link it with Google manually from Account Settings.`
 			);
-			if (existsEmail.role === vars.roles.moderator)
-				req.flash(
-					"info",
-					`Redirect to <strong><a href="http://${req.headers.host}/dashboard/pages/auth/password/forgot">Forgot Password?</a></strong> to reset your password.`
-				);
 			return done(null);
 		}
 
@@ -389,7 +378,6 @@ const AuthController = {
 			facebook: profile.id,
 			is_active: true,
 			is_verified: true,
-			role: vars.roles.moderator,
 		};
 
 		const [newUserError, newUser] = await to(User.create(user));
@@ -412,13 +400,13 @@ const AuthController = {
 
 		if (req.isAuthenticated()) {
 			const [existsUserError, existsUser] = await to(
-				User.findOne({ [req.params.provider]: req.body.provider_id, role: vars.roles.user })
+				User.findOne({ [req.params.provider]: req.body.provider_id })
 			);
 			if (existsUserError) return next(existsUserError);
 			if (existsUser) {
 				req.flash(
 					"danger",
-					`There is already an account using this email address with ${existsUser.role.toLowerCase()} role. Sign in to that account and link it with Google manually from Account Settings.`
+					`There is already an account using this email address. Sign in to that account and link it with Google manually from Account Settings.`
 				);
 				return next();
 			}
@@ -434,7 +422,6 @@ const AuthController = {
 				...(req?.body?.picture ? { picture: req.body.picture } : {}),
 				is_verified: true,
 				is_active: true,
-				...(!user?.role ? { role: vars.roles.user } : {}),
 			});
 
 			const [tokenError, token] = await to(
@@ -509,9 +496,7 @@ const AuthController = {
 			);
 		}
 
-		const [existsUserError, existsUser] = await to(
-			User.findOne({ [req.params.provider]: req.body.provider_id, role: vars.roles.user })
-		);
+		const [existsUserError, existsUser] = await to(User.findOne({ [req.params.provider]: req.body.provider_id }));
 		if (existsUserError) return next(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
@@ -590,13 +575,8 @@ const AuthController = {
 		if (existsEmail) {
 			req.flash(
 				"danger",
-				`There is already an account using this email address with ${existsEmail.role.toLowerCase()} role. Sign in to that account and link it with Google manually from Account Settings.`
+				`There is already an account using this email address. Sign in to that account and link it with Google manually from Account Settings.`
 			);
-			if (existsEmail.role === vars.roles.user)
-				req.flash(
-					"info",
-					`Redirect to <strong><a href="http://${req.headers.host}/auth/password/forgot">Forgot Password?</a></strong> to reset your password.`
-				);
 			return next();
 		}
 
@@ -608,7 +588,6 @@ const AuthController = {
 				[req.params.provider]: req.body.provider_id,
 				is_active: true,
 				is_verified: true,
-				role: vars.roles.user,
 			})
 		);
 		if (newUserError) return next(newUserError);
@@ -661,11 +640,14 @@ const AuthController = {
 	},
 	getSocialUser: (req: Request, res: Response, next: NextFunction) =>
 		passport.authenticate(req.params.provider, {
-			scope: vars.auth.strategies[req.params.provider as "google" | "facebook"].scope || "",
+			scope:
+				vars.auth.strategies.social[req.params.provider as keyof typeof vars.auth.strategies.social].scope ||
+				"",
 		})(req, res, next),
 	getSocialRedirect: (req: Request, res: Response, next: NextFunction) =>
 		passport.authenticate(req.params.provider, {
-			...(vars?.auth?.strategies?.[req?.params?.provider as "google" | "facebook"]?.redirect || {}),
+			...(vars.auth.strategies.social[req.params.provider as keyof typeof vars.auth.strategies.social]
+				?.redirect || {}),
 		})(req, res, next),
 	getSocialUnlink: async (req: Request, res: Response, next: NextFunction) => {
 		const { provider } = req.params;
@@ -680,90 +662,29 @@ const AuthController = {
 		if (updateUserError) return next(updateUserError);
 
 		req.flash("success", `${provider} account has been unlinked.`);
-		res.format({
-			html: () => res.status(httpStatus.OK).redirect(req.session.returnTo || "/dashboard"),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
-	getRegister: (_req: Request, res: Response) =>
-		res.render("dashboard/pages/auth/register", compoundResponse({ pageTitle: "Register", title: "Register" })),
-	getLogin: (_req: Request, res: Response) =>
-		res.render("dashboard/pages/auth/login", compoundResponse({ pageTitle: "login", title: "Login" })),
-	getForgotPassword: (_req: Request, res: Response) =>
-		res.render(
-			"dashboard/pages/auth/password/forgot",
-			compoundResponse({ pageTitle: "Forgot Password", title: "Forgot Password" })
-		),
-	getForgotPasswordConfirm: (_req: Request, res: Response) =>
-		res.render(
-			"dashboard/pages/auth/password/confirm",
-			compoundResponse({
-				pageTitle: "Forgot Password Confirmation",
-				title: "Forgot Password Confirmation",
-			})
-		),
-	getResetPassword: (_req: Request, res: Response) =>
-		res.render(
-			"dashboard/pages/auth/password/reset",
-			compoundResponse({ pageTitle: "Reset Password", title: "Reset Password" })
-		),
 	postRegister: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
 			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return res.format({
-				html: () =>
-					res.status(httpStatus.UNPROCESSABLE_ENTITY).render(
-						"dashboard/pages/auth/register",
-						compoundResponse({
-							pageTitle: "Register",
-							title: "Register",
-							entities: {
-								data: {
-									body: { ...req.body, password: undefined, password_confirmation: undefined },
-								},
-							},
-						})
-					),
-				json: () => next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() })),
-			});
+			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { email } = req.body;
 		const [userError, user] = await to(User.findOne({ email }));
 		if (userError) return next(userError);
 		if (user && Object.keys(user)?.length) {
-			req.flash(
-				"danger",
-				`Account already exists, try to <strong><a href="http://${req.headers.host}/dashboard/pages/auth/login">login</a></strong> instead.`
-			);
-			return res.format({
-				html: () =>
-					res.status(httpStatus.CONFLICT).render(
-						"dashboard/pages/auth/register",
-						compoundResponse({
-							pageTitle: "Register",
-							title: "Register",
-							entities: {
-								data: {
-									body: { ...req.body, password: undefined, password_confirmation: undefined },
-								},
-							},
-						})
-					),
-				json: () =>
-					res
-						.status(httpStatus.CONFLICT)
-						.json(compoundResponse({ status: httpStatus.CONFLICT, flashes: req.flash() })),
-			});
+			req.flash("danger", `Account already exists, try to login instead.`);
+			return res
+				.status(httpStatus.CONFLICT)
+				.json(compoundResponse({ status: httpStatus.CONFLICT, flashes: req.flash() }));
 		}
 
 		const [createdUserError, createdUser] = await to(
 			User.create({
-				...req.body,
+				...(req?.body || {}),
 				is_active: true,
-				...(!isAPIHeaders(req) && { role: vars.roles.moderator }),
 			})
 		);
 		if (createdUserError) return next(createdUserError);
@@ -792,203 +713,125 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "Account Registered Successfully, Check your E-mail address to verify your account.");
-		res.format({
-			html: () => {
-				req.login(createdUser, async (loginError) => {
-					if (loginError) return next(loginError);
+		const access_token = jsonwebtoken.sign(
+			{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
+			vars.auth.strategies.jwt.accessTokenSecret,
+			{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
+		);
+		const refresh_token = jsonwebtoken.sign(
+			{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
+			vars.auth.strategies.jwt.refreshTokenSecret,
+			{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
+		);
 
-					if (req.body.remember) {
-						const expire = 1000 * 60 * 60 * vars.cookies.maxAgeInHours;
-						req.session.cookie.expires = new Date(Date.now() + expire);
-						req.session.cookie.maxAge = expire;
-					} else {
-						req.session.cookie.expires = null;
-					}
+		const [newRefreshTokenError] = await to(
+			Token.create({
+				user: createdUser._id,
+				token: refresh_token,
+				kind: vars.tokenTypes.jwt,
+				expire_at: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+			})
+		);
+		if (newRefreshTokenError) return next(newRefreshTokenError);
 
-					res.status(httpStatus.OK).redirect(req.session.returnTo || "/dashboard");
-				});
-			},
-			json: async () => {
-				const access_token = jsonwebtoken.sign(
-					{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
-					vars.auth.strategies.jwt.accessTokenSecret,
-					{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
-				);
-				const refresh_token = jsonwebtoken.sign(
-					{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
-					vars.auth.strategies.jwt.refreshTokenSecret,
-					{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
-				);
+		res.status(httpStatus.CREATED).json(
+			compoundResponse({
+				status: httpStatus.CREATED,
+				entities: {
+					data: {
+						user: { ...createdUser.toObject(), password: undefined },
+						access_token,
+						refresh_token,
+						token_type: vars.auth.strategies.jwt.tokenType,
+					},
+				},
+				flashes: req.flash(),
+			})
+		);
+	},
+	postLogin: async (req: Request, res: Response, next: NextFunction) => {
+		const validationErrors = validationResult(req);
+		if (!validationErrors.isEmpty()) {
+			req.flash("danger", JSON.stringify(validationErrors.mapped()));
+			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+		}
 
-				const [newRefreshTokenError] = await to(
+		const { email } = req.body;
+		const [userError, user] = await to(User.findOne({ email }));
+		if (userError) return next(userError);
+		if (!user) return next();
+
+		user.comparePassword(req.body.password, async (compareError, isMatch) => {
+			if (compareError) return next(compareError);
+			if (!isMatch) {
+				req.flash("danger", "Your credentials doesn't match our records.");
+				return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY }));
+			}
+
+			const [updateUserError] = await to(
+				User.updateOne({ email: user.email, is_active: false }, { $set: { is_active: true } })
+			);
+			if (updateUserError) return next(updateUserError);
+
+			const access_token = jsonwebtoken.sign(
+				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
+				vars.auth.strategies.jwt.accessTokenSecret,
+				{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
+			);
+			const refresh_token = jsonwebtoken.sign(
+				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
+				vars.auth.strategies.jwt.refreshTokenSecret,
+				{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
+			);
+
+			const [userRefreshTokenError, userRefreshToken] = await to(
+				Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } })
+			);
+			if (userRefreshTokenError) return next(userRefreshTokenError);
+			let newRefreshTokenError;
+
+			if (!userRefreshToken) {
+				[newRefreshTokenError] = await to(
 					Token.create({
-						user: createdUser._id,
+						user: user._id,
 						token: refresh_token,
 						kind: vars.tokenTypes.jwt,
 						expire_at:
 							Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 					})
 				);
-				if (newRefreshTokenError) return next(newRefreshTokenError);
-
-				res.status(httpStatus.CREATED).json(
-					compoundResponse({
-						status: httpStatus.CREATED,
-						entities: {
-							data: {
-								user: { ...createdUser.toObject(), password: undefined },
-								access_token,
-								refresh_token,
-								token_type: vars.auth.strategies.jwt.tokenType,
-							},
-						},
-						flashes: req.flash(),
-					})
-				);
-			},
-		});
-	},
-	postLogin: (req: Request, res: Response, next: NextFunction) => {
-		const validationErrors = validationResult(req);
-		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return res.format({
-				html: () =>
-					res.status(httpStatus.UNPROCESSABLE_ENTITY).render(
-						"dashboard/pages/auth/login",
-						compoundResponse({
-							pageTitle: "login",
-							title: "Login",
-							entities: {
-								data: {
-									body: { ...req.body, password: undefined },
-								},
-							},
-						})
-					),
-				json: () => next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() })),
-			});
-		}
-
-		res.format({
-			html: () => {
-				passport.authenticate("local", async (err: Error, user: IUserDocument) => {
-					if (err) next(err);
-					if (!user)
-						return res.status(httpStatus.NOT_FOUND).render(
-							"dashboard/pages/auth/login",
-							compoundResponse({
-								pageTitle: "Login",
-								title: "Login",
-								entities: {
-									data: {
-										body: { ...req.body, password: undefined },
-									},
-								},
-							})
-						);
-
-					req.login(user, async (loginError) => {
-						if (loginError) return next(loginError);
-
-						if (req.body.remember) {
-							const expire = 1000 * 60 * 60 * vars.cookies.maxAgeInHours;
-							req.session.cookie.expires = new Date(Date.now() + expire);
-							req.session.cookie.maxAge = expire;
-						} else {
-							req.session.cookie.expires = null;
-						}
-
-						const [updateUserError] = await to(
-							User.updateOne({ email: user.email, is_active: false }, { $set: { is_active: true } })
-						);
-						if (updateUserError) return next();
-
-						req.flash("success", "Welcome Back!");
-						res.status(httpStatus.OK).redirect(req.session.returnTo || "/dashboard");
-					});
-				})(req, res, next);
-			},
-			json: async () => {
-				const { email } = req.body;
-				const [userError, user] = await to(User.findOne({ email }));
-				if (userError) return next(userError);
-				if (!user) return next();
-
-				user.comparePassword(req.body.password, async (compareError, isMatch) => {
-					if (compareError) return next(compareError);
-					if (!isMatch) {
-						req.flash("danger", "Your credentials doesn't match our records.");
-						return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY }));
-					}
-
-					const [updateUserError] = await to(
-						User.updateOne({ email: user.email, is_active: false }, { $set: { is_active: true } })
-					);
-					if (updateUserError) return next(updateUserError);
-
-					const access_token = jsonwebtoken.sign(
-						{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
-						vars.auth.strategies.jwt.accessTokenSecret,
-						{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
-					);
-					const refresh_token = jsonwebtoken.sign(
-						{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
-						vars.auth.strategies.jwt.refreshTokenSecret,
-						{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
-					);
-
-					const [userRefreshTokenError, userRefreshToken] = await to(
-						Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } })
-					);
-					if (userRefreshTokenError) return next(userRefreshTokenError);
-					let newRefreshTokenError;
-
-					if (!userRefreshToken) {
-						[newRefreshTokenError] = await to(
-							Token.create({
-								user: user._id,
+			} else {
+				[newRefreshTokenError] = await to(
+					Token.updateOne(
+						{ user: user._id, kind: vars.tokenTypes.jwt },
+						{
+							$set: {
 								token: refresh_token,
-								kind: vars.tokenTypes.jwt,
 								expire_at:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
-							})
-						);
-					} else {
-						[newRefreshTokenError] = await to(
-							Token.updateOne(
-								{ user: user._id, kind: vars.tokenTypes.jwt },
-								{
-									$set: {
-										token: refresh_token,
-										expire_at:
-											Date.now() +
-											1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
-									},
-								}
-							)
-						);
-					}
-					if (newRefreshTokenError) return next(newRefreshTokenError);
-
-					req.flash("success", "Welcome Back!");
-					return res.status(httpStatus.OK).json(
-						compoundResponse({
-							status: httpStatus.OK,
-							entities: {
-								data: {
-									user: { ...user.toObject(), is_active: true, password: undefined },
-									access_token,
-									refresh_token,
-									token_type: vars.auth.strategies.jwt.tokenType,
-								},
 							},
-							flashes: req.flash(),
-						})
-					);
-				});
-			},
+						}
+					)
+				);
+			}
+			if (newRefreshTokenError) return next(newRefreshTokenError);
+
+			req.flash("success", "Welcome Back!");
+			return res.status(httpStatus.OK).json(
+				compoundResponse({
+					status: httpStatus.OK,
+					entities: {
+						data: {
+							user: { ...user.toObject(), is_active: true, password: undefined },
+							access_token,
+							refresh_token,
+							token_type: vars.auth.strategies.jwt.tokenType,
+						},
+					},
+					flashes: req.flash(),
+				})
+			);
 		});
 	},
 	logout: async (req: Request, res: Response, next: NextFunction) => {
@@ -1008,15 +851,7 @@ const AuthController = {
 		if (updateUserError) return next(updateUserError);
 
 		req.flash("success", "Successfully logged out!");
-		res.format({
-			html: () =>
-				req.logout(() => {
-					req.user = undefined;
-					return res.redirect("/dashboard/auth/login");
-				}),
-			json: async () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	postRefreshToken: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
@@ -1084,22 +919,7 @@ const AuthController = {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
 			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return res.format({
-				html: () =>
-					res.status(httpStatus.UNPROCESSABLE_ENTITY).render(
-						"dashboard/pages/auth/password/forgot",
-						compoundResponse({
-							pageTitle: "Forgot Password",
-							title: "Forgot Password",
-							entities: {
-								data: {
-									body: req.body,
-								},
-							},
-						})
-					),
-				json: () => next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() })),
-			});
+			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { email } = req.body;
@@ -1107,28 +927,12 @@ const AuthController = {
 		if (userError) return next(userError);
 		if (!user) {
 			req.flash("danger", "No account found with this email.");
-			return res.format({
-				html: () =>
-					res.status(httpStatus.NOT_FOUND).render(
-						"dashboard/pages/auth/password/forgot",
-						compoundResponse({
-							pageTitle: "Forgot Password",
-							title: "Forgot Password",
-							entities: {
-								data: {
-									body: req.body,
-								},
-							},
-						})
-					),
-				json: () =>
-					res.status(httpStatus.NOT_FOUND).json(
-						compoundResponse({
-							status: httpStatus.NOT_FOUND,
-							flashes: req.flash(),
-						})
-					),
-			});
+			return res.status(httpStatus.NOT_FOUND).json(
+				compoundResponse({
+					status: httpStatus.NOT_FOUND,
+					flashes: req.flash(),
+				})
+			);
 		}
 
 		const token = await user.createHashToken();
@@ -1179,35 +983,13 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "You have been emailed a reset password link.");
-		res.format({
-			html: () =>
-				res
-					.status(httpStatus.OK)
-					.redirect(`/dashboard/auth/password/forgot/confirm?${qs.stringify({ email })}`),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	postResetPassword: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
 			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return res.format({
-				html: () =>
-					res.status(httpStatus.UNPROCESSABLE_ENTITY).render(
-						"dashboard/pages/auth/password/reset",
-						compoundResponse({
-							pageTitle: "Reset Password",
-							title: "Reset Password",
-							entities: {
-								data: {
-									body: { ...req.body, password: undefined, password_confirmation: undefined },
-								},
-							},
-						})
-					),
-				json: () => next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() })),
-			});
+			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const [resetPasswordTokenError, resetPasswordToken] = await to(
@@ -1220,44 +1002,26 @@ const AuthController = {
 		if (resetPasswordTokenError) return next(resetPasswordTokenError);
 		if (!resetPasswordToken) {
 			req.flash("danger", "token is invalid or has expired.");
-			return res.format({
-				html: () =>
-					res.status(httpStatus.NOT_FOUND).render(
-						"dashboard/pages/auth/password/reset",
-						compoundResponse({
-							pageTitle: "Reset Password",
-							title: "Reset Password",
-							entities: {
-								data: {
-									body: {
-										...(req?.body || {}),
-										password: undefined,
-										password_confirmation: undefined,
-									},
-								},
-							},
-						})
-					),
-				json: () =>
-					res.status(httpStatus.NOT_FOUND).json(
-						compoundResponse({
-							status: httpStatus.NOT_FOUND,
-							flashes: req.flash(),
-						})
-					),
-			});
+			return res.status(httpStatus.NOT_FOUND).json(
+				compoundResponse({
+					status: httpStatus.NOT_FOUND,
+					flashes: req.flash(),
+				})
+			);
 		}
 
 		let userError = null;
-		let user = null;
+		let user;
 
 		[userError, user] = await to(User.findOne({ _id: resetPasswordToken.user }));
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		user = Object.assign(user, { ...(req?.body?.password ? { password: req.body.password } : {}) });
+		user = Object.assign(user, {
+			...(req?.body?.password ? { password: req.body.password } : {}),
+		});
 
-		const [newUserError, newUser] = await to(user.save());
+		const [newUserError, newUser] = await to<IUserDocument>(user.save());
 		if (newUserError) return next(newUserError);
 
 		const [deleteResetPasswordTokenError] = await to(
@@ -1282,11 +1046,7 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "successfully updated password.");
-		res.format({
-			html: () => res.status(httpStatus.OK).redirect("/dashboard/auth/login"),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	getEmailVerification: async (req: Request, res: Response, next: NextFunction) => {
 		const [verifyEmailTokenError, verifyEmailToken] = await to(
@@ -1299,13 +1059,9 @@ const AuthController = {
 		if (verifyEmailTokenError) return next(verifyEmailTokenError);
 		if (!verifyEmailToken) {
 			req.flash("danger", "token is invalid or has expired.");
-			return res.format({
-				html: () => res.status(httpStatus.NOT_FOUND).redirect("/dashboard"),
-				json: () =>
-					res
-						.status(httpStatus.NOT_FOUND)
-						.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() })),
-			});
+			return res
+				.status(httpStatus.NOT_FOUND)
+				.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
 		}
 
 		const [userError] = await to(
@@ -1323,29 +1079,21 @@ const AuthController = {
 		if (deleteVerifyEmailTokenError) return next(deleteVerifyEmailTokenError);
 
 		req.flash("success", "Your account has been Verified");
-		return res.format({
-			html: () => res.status(httpStatus.OK).redirect("/dashboard"),
-			json: () =>
-				res.status(httpStatus.OK).json(
-					compoundResponse({
-						status: httpStatus.OK,
-						flashes: req.flash(),
-					})
-				),
-		});
+		return res.status(httpStatus.OK).json(
+			compoundResponse({
+				status: httpStatus.OK,
+				flashes: req.flash(),
+			})
+		);
 	},
 	getResendEmailVerification: async (req: Request, res: Response, next: NextFunction) => {
 		const [userError, user] = await to(User.findOne({ _id: req?.user?._id || "", is_verified: { $lt: 1 } }));
 		if (userError) return next(userError);
 		if (!user) {
 			req.flash("danger", "Email Already Verified!");
-			return res.format({
-				html: () => res.status(httpStatus.NOT_FOUND).redirect("/dashboard"),
-				json: () =>
-					res
-						.status(httpStatus.NOT_FOUND)
-						.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() })),
-			});
+			return res
+				.status(httpStatus.NOT_FOUND)
+				.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
 		}
 
 		const [userRefreshTokenError, userRefreshToken] = await to(
@@ -1394,11 +1142,7 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "Email Verification sent successfully!");
-		res.format({
-			html: () => res.status(httpStatus.OK).redirect("/dashboard"),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

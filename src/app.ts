@@ -3,9 +3,7 @@ import flash from "connect-flash";
 import timeout from "connect-timeout";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { NextFunction, Request, Response } from "express";
-import back from "express-back";
-import userAgent from "express-useragent";
+import express, { Request, Response } from "express";
 import helmet from "helmet";
 import i18n from "i18n";
 import methodOverride from "method-override";
@@ -20,7 +18,7 @@ import logger from "./middlewares/logger";
 import queryParser from "./middlewares/queryParser";
 import rateLimiter from "./middlewares/rateLimiter";
 import session from "./middlewares/session";
-import routes from "./routes/index";
+import routes from "./routes";
 import { normalizePort } from "./utils/helpers";
 import vars from "./utils/vars";
 
@@ -55,27 +53,9 @@ app.use(compression()); // Gzip compressing can decrease the size of the respons
 app.use(csrf); // csrf protection MUST be defined after cookieParser and session middleware.
 app.use(flash());
 app.use(i18n.init); // i18n init parses req for language headers, cookies, etc.
-app.use(back({ default: "/dashboard" })); //  uses sessions to track the two previous paths a client has visited
 // This would skip if HTTP request response is less than 399 i.e no errors.
 app.use(loggerToMongo(vars.db.url, "logs", (req: Request, res: Response) => res.statusCode < 399));
-app.use(userAgent.express()); // attach browser information to express application.
 app.use(locals);
-
-// after successful login, redirect back to the intended page.
-app.use((req: Request, _res: Response, next: NextFunction) => {
-	if (
-		!req.user &&
-		req.path !== "/dashboard/auth/login" &&
-		req.path !== "/dashboard/auth/register" &&
-		!req.path.match(/^\/dashboard\/auth/) &&
-		!req.path.match(/\./)
-	) {
-		req.session.returnTo = req.originalUrl;
-	} else if (req.user && (req.path === "/dashboard" || req.path.match(/^\/api/))) {
-		req.session.returnTo = req.originalUrl;
-	}
-	next();
-});
 
 // Routes
 app.use("/", rateLimiter, routes);

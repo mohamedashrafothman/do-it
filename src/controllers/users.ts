@@ -31,7 +31,6 @@ const UsersController = {
 						}),
 					body("name").optional().notEmpty().withMessage("You must supply a name!").trim().escape(),
 					body("old_password")
-						.if(body("old_password").custom((_value, { req }) => req.user.role !== vars.roles.admin))
 						.if(body("password").exists())
 						.notEmpty()
 						.withMessage("Old Password can't be blank!")
@@ -64,7 +63,7 @@ const UsersController = {
 		}
 	},
 	getUsers: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, status: is_verified, role, ...query } = req.query;
+		const { q, status: is_verified, ...query } = req.query;
 		const querySearchFields = ["name", "email", "role"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
@@ -84,14 +83,6 @@ const UsersController = {
 						{}),
 					...((is_verified && is_verified !== "all" && { is_verified }) || {}),
 					_id: { $ne: req?.user?._id || "" },
-					$and: [
-						...((role && role !== "all" && [{ role: vars.roles[role as string] }]) || []),
-						{
-							role: {
-								$ne: vars.roles.admin,
-							},
-						},
-					],
 				},
 				{ ...query }
 			)
@@ -100,25 +91,12 @@ const UsersController = {
 
 		const { docs: data, ...pagination } = paginatedUsers;
 
-		return res.format({
-			html: () =>
-				res.status(httpStatus.OK).render(
-					"dashboard/pages/users/list",
-					compoundResponse({
-						pageTitle: "Users",
-						title: "Users",
-						description: "List of moderators and customer users.",
-						entities: { data: [...(data || [])], meta: { pagination, sort } },
-					})
-				),
-			json: () =>
-				res.status(httpStatus.OK).json(
-					compoundResponse({
-						status: httpStatus.OK,
-						entities: { data: [...(data || [])], meta: { pagination, sort } },
-					})
-				),
-		});
+		return res.status(httpStatus.OK).json(
+			compoundResponse({
+				status: httpStatus.OK,
+				entities: { data: [...(data || [])], meta: { pagination, sort } },
+			})
+		);
 	},
 	getSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const { user: userIdentifier } = req.params;
@@ -129,7 +107,6 @@ const UsersController = {
 						{ slug: userIdentifier },
 						...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
 					],
-					...(isAPIHeaders(req) ? { role: { $nin: [vars.roles.admin, vars.roles.moderator] } } : {}),
 				},
 				"-password"
 			)
@@ -137,16 +114,7 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		res.format({
-			html: () =>
-				res.render("dashboard/pages/users/single", {
-					pageTitle: `${user?.name} Profile`,
-					title: `${user?.name} Profile`,
-					entities: { data: user.toObject() },
-				}),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } }));
 	},
 	getCurrentAuthenticatedUser: async (req: Request, res: Response, next: NextFunction) => {
 		const _id = req?.user?._id || "";
@@ -154,25 +122,13 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		res.format({
-			html: () =>
-				res.render("dashboard/pages/users/single", {
-					pageTitle: "My Profile",
-					title: "My Profile",
-					entities: { data: user },
-				}),
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } }));
 	},
 	updateSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
 			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return res.format({
-				html: () => res.status(httpStatus.UNPROCESSABLE_ENTITY).back(),
-				json: () => next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() })),
-			});
+			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { user: userIdentifier } = req.params;
@@ -192,7 +148,6 @@ const UsersController = {
 					{ slug: userIdentifier },
 					...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
 				],
-				...(isAPIHeaders(req) ? { role: { $nin: [vars.roles.admin, vars.roles.moderator] } } : {}),
 			})
 		);
 		if (userError) return next(userError);
@@ -268,15 +223,9 @@ const UsersController = {
 		}
 
 		req.flash("success", "successfully updated.");
-		res.format({
-			html: () => res.status(httpStatus.OK).back(),
-			json: () =>
-				res
-					.status(httpStatus.OK)
-					.json(
-						compoundResponse({ status: httpStatus.OK, entities: { data: newUser }, flashes: req.flash() })
-					),
-		});
+		res.status(httpStatus.OK).json(
+			compoundResponse({ status: httpStatus.OK, entities: { data: newUser }, flashes: req.flash() })
+		);
 	},
 	deleteSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const { user: userIdentifier } = req.params;
@@ -288,7 +237,6 @@ const UsersController = {
 						{ slug: userIdentifier },
 						...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
 					],
-					role: { $nin: [vars.roles.admin] },
 				},
 				"-password"
 			)
@@ -306,20 +254,7 @@ const UsersController = {
 		if (deleteTokenError) return next(deleteTokenError);
 
 		req.flash("success", "Successfully Deleted.");
-		res.format({
-			html: async () => {
-				if (user.role !== vars.roles.admin && user._id === req?.user?._id)
-					req.logout((err) => {
-						if (err) return next(err);
-
-						req.user = undefined;
-						return res.redirect("/dashboard/auth/login");
-					});
-				return res.status(Number(httpStatus.ok)).redirect(req.prevPrevPath || "/dashboard");
-			},
-			json: () =>
-				res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() })),
-		});
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

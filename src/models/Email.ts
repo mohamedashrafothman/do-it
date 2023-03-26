@@ -1,5 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import isEmail from "validator/lib/isEmail";
+import isEmail from "validator/lib/isEmail.js";
 import IEmail from "../interfaces/Email.interface";
 
 // adding schema methods here

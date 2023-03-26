@@ -7,10 +7,6 @@ const IndexController = {
 		res.cookie("locale", req.params.locale);
 		res.redirect("back");
 	},
-	getWebIndex: (_req: Request, res: Response) =>
-		res.render("dashboard/index", { pageTitle: "Admin Dashboard", title: "Admin Dashboard" }),
-	getReactIndex: (_req: Request, res: Response) =>
-		res.render("react/index", { pageTitle: "React application", title: "React Application" }),
 };
 
 export default IndexController;

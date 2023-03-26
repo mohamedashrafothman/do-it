@@ -1,7 +1,7 @@
-import { VarsTypes } from "utils/vars";
-import { type IUserDocument } from "../models/User";
+import { type IUserDocument } from "../../models/User";
+import { type VarsTypes } from "../../utils/vars";
 
-export { };
+export {};
 
 declare global {
 	namespace Express {
@@ -10,12 +10,9 @@ declare global {
 		export interface Request {
 			vars?: VarsTypes;
 			lang?: string;
-			roles?: VarsTypes["roles"];
 			prevPath?: string;
 			prevPrevPath?: string;
-		}
-		export interface Response {
-			back: () => unknown;
+			user: IUserDocument;
 		}
 	}
 }

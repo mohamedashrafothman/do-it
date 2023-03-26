@@ -1,10 +1,9 @@
-import { config } from "dotenv";
-import { expand } from "dotenv-expand";
+import * as dotenv from "dotenv";
+import * as dotenvExpand from "dotenv-expand";
+import path from "path";
 
-const dotenv = config();
-expand(dotenv);
-
-const ROLES = { admin: "ADMIN", user: "USER", moderator: "MODERATOR" } as const;
+const env = dotenv.config({ path: path.join(__dirname, "../../../.env") });
+dotenvExpand.expand(env);
 
 type VarsTypes = {
 	isProduction: boolean;
@@ -14,7 +13,6 @@ type VarsTypes = {
 		port: string;
 		url: string;
 	};
-	roles: { [key: string]: (typeof ROLES)[keyof typeof ROLES] };
 	tokenTypes: {
 		jwt: "JWT";
 		facebook: "FACEBOOK";
@@ -49,21 +47,23 @@ type VarsTypes = {
 				refreshTokenExpiresInDays: number;
 				tokenType: "Bearer";
 			};
-			facebook: {
-				scope: ["email", "public_profile"];
-				redirect: { successRedirect: "/dashboard"; failureRedirect: "/dashboard/auth/login" };
-				clientId: string;
-				secret: string;
-				callbackUrl: "/dashboard/auth/facebook/redirect";
-				profileFields: ["name", "email", "link", "locale", "timezone", "gender"];
-			};
-			google: {
-				scope: "profile email";
-				redirect: { successRedirect: "/dashboard"; failureRedirect: "/dashboard/auth/login" };
-				clientId: string;
-				secret: string;
-				callbackUrl: "/dashboard/auth/google/redirect";
-				profileFields: ["r_basicprofile", "r_emailaddress"];
+			social: {
+				facebook: {
+					scope: ["email", "public_profile"];
+					redirect: { successRedirect: "/dashboard"; failureRedirect: "/dashboard/auth/login" };
+					clientId: string;
+					secret: string;
+					callbackUrl: "/dashboard/auth/facebook/redirect";
+					profileFields: ["name", "email", "link", "locale", "timezone", "gender"];
+				};
+				google: {
+					scope: "profile email";
+					redirect: { successRedirect: "/dashboard"; failureRedirect: "/dashboard/auth/login" };
+					clientId: string;
+					secret: string;
+					callbackUrl: "/dashboard/auth/google/redirect";
+					profileFields: ["r_basicprofile", "r_emailaddress"];
+				};
 			};
 		};
 	};
@@ -93,7 +93,6 @@ const vars: VarsTypes = {
 		port: process.env?.APP_PORT || "",
 		url: process.env?.APP_URL || "",
 	},
-	roles: ROLES,
 	tokenTypes: {
 		jwt: "JWT",
 		facebook: "FACEBOOK",
@@ -128,21 +127,23 @@ const vars: VarsTypes = {
 				refreshTokenExpiresInDays: Number(process.env?.JWT_REFRESH_TOKEN_EXPIRES_IN_DAYS || 0) || 0,
 				tokenType: "Bearer",
 			},
-			facebook: {
-				scope: ["email", "public_profile"],
-				redirect: { successRedirect: "/dashboard", failureRedirect: "/dashboard/auth/login" },
-				clientId: process.env?.FACEBOOK_CLIENT_ID || "",
-				secret: process.env?.FACEBOOK_CLIENT_SECRET || "",
-				callbackUrl: "/dashboard/auth/facebook/redirect",
-				profileFields: ["name", "email", "link", "locale", "timezone", "gender"],
-			},
-			google: {
-				scope: "profile email",
-				redirect: { successRedirect: "/dashboard", failureRedirect: "/dashboard/auth/login" },
-				clientId: process.env?.GOOGLE_CLIENT_ID || "",
-				secret: process.env?.GOOGLE_CLIENT_SECRET || "",
-				callbackUrl: "/dashboard/auth/google/redirect",
-				profileFields: ["r_basicprofile", "r_emailaddress"],
+			social: {
+				facebook: {
+					scope: ["email", "public_profile"],
+					redirect: { successRedirect: "/dashboard", failureRedirect: "/dashboard/auth/login" },
+					clientId: process.env?.FACEBOOK_CLIENT_ID || "",
+					secret: process.env?.FACEBOOK_CLIENT_SECRET || "",
+					callbackUrl: "/dashboard/auth/facebook/redirect",
+					profileFields: ["name", "email", "link", "locale", "timezone", "gender"],
+				},
+				google: {
+					scope: "profile email",
+					redirect: { successRedirect: "/dashboard", failureRedirect: "/dashboard/auth/login" },
+					clientId: process.env?.GOOGLE_CLIENT_ID || "",
+					secret: process.env?.GOOGLE_CLIENT_SECRET || "",
+					callbackUrl: "/dashboard/auth/google/redirect",
+					profileFields: ["r_basicprofile", "r_emailaddress"],
+				},
 			},
 		},
 	},
@@ -164,5 +165,4 @@ const vars: VarsTypes = {
 	},
 };
 
-export { ROLES, type VarsTypes };
 export default vars;
