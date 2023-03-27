@@ -68,8 +68,8 @@ const UsersController = {
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
 			{ name: "Name Z-A", value: { name: -1 } },
-			{ name: "Register Date Ascending", value: { created_at: 1 } },
-			{ name: "Register Date Descending", value: { created_at: -1 } },
+			{ name: "Created Date Ascending", value: { created_at: 1 } },
+			{ name: "Created Date Descending", value: { created_at: -1 } },
 		];
 
 		const [paginatedUsersError, paginatedUsers] = await to(
@@ -89,12 +89,12 @@ const UsersController = {
 		);
 		if (paginatedUsersError) return next(paginatedUsersError);
 
-		const { docs: data, ...pagination } = paginatedUsers;
+		const { docs, ...pagination } = paginatedUsers;
 
 		return res.status(httpStatus.OK).json(
 			compoundResponse({
 				status: httpStatus.OK,
-				entities: { data: [...(data || [])], meta: { pagination, sort } },
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
 			})
 		);
 	},

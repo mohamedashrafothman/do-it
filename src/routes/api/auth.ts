@@ -6,7 +6,7 @@ import vars from "../../utils/vars";
 
 const router = Router();
 
-// Breakpoints
+// Endpoints
 router
 	.route("/logout")
 	.all(allowMethods(["post", "get"]), passport.authenticate("jwt", { session: false }))

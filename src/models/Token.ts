@@ -8,6 +8,7 @@ export interface ITokenDocument extends IToken, Document {}
 // adding statics methods here
 export type ITokenModel = Model<ITokenDocument>;
 
+// schema definition
 const TokenSchema = new Schema<ITokenDocument, object, ITokenDocument>(
 	{
 		user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
@@ -18,6 +19,7 @@ const TokenSchema = new Schema<ITokenDocument, object, ITokenDocument>(
 	{ timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
 
+// modal definition
 const TokenModal = model<ITokenDocument, PaginateModel<ITokenDocument> & ITokenModel>("Token", TokenSchema);
 
 export default TokenModal;

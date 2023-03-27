@@ -4,7 +4,7 @@ import { default as usersController } from "../../controllers/users";
 
 const router = Router();
 
-// Breakpoints
+// Endpoints
 router
 	.route("/")
 	.all(allowMethods(["get"]))
