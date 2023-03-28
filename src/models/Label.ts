@@ -11,6 +11,7 @@ export type ILabelModel = Model<ILabelDocument>;
 // schema definition
 const LabelSchema = new Schema<ILabelDocument, object, ILabelDocument>(
 	{
+		user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
 		name: { type: String, trim: true, required: true },
 		slug: { type: String, slug: "name", unique: true, index: true, slugPaddingSize: 6 },
 		emoji: { type: String, required: true },

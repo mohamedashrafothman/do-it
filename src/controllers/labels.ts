@@ -25,7 +25,9 @@ const LabelController = {
 			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const [createdLabelError, createdLabel] = await to(Label.create({ ...(req?.body || {}) }));
+		const [createdLabelError, createdLabel] = await to(
+			Label.create({ ...(req?.body || {}), user: req?.user?._id || "" })
+		);
 		if (createdLabelError) return next(createdLabelError);
 
 		req.flash("success", "Successfully created!");
@@ -56,6 +58,7 @@ const LabelController = {
 						})),
 					}) ||
 						{}),
+					user: req?.user?._id || "",
 				},
 				{ ...query }
 			)
@@ -75,6 +78,7 @@ const LabelController = {
 		const { label: labelIdentifier } = req.params;
 		const [labelError, label] = await to(
 			Label.findOne({
+				user: req?.user?._id || "",
 				$or: [
 					{ slug: labelIdentifier },
 					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
@@ -98,6 +102,7 @@ const LabelController = {
 		// eslint-disable-next-line prefer-const
 		let [labelError, label] = await to(
 			Label.findOne({
+				user: req?.user?._id || "",
 				$or: [
 					{ slug: labelIdentifier },
 					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
@@ -123,6 +128,7 @@ const LabelController = {
 
 		const [labelError, label] = await to(
 			Label.findOne({
+				user: req?.user?._id || "",
 				$or: [
 					{ slug: labelIdentifier },
 					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
