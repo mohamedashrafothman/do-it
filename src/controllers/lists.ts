@@ -101,26 +101,24 @@ const ListController = {
 
 		// eslint-disable-next-line prefer-const
 		let [listError, list] = await to(
-			List.findOne({
-				user: req?.user?._id || "",
-				$or: [
-					{ slug: listIdentifier },
-					...(listIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: listIdentifier }] : []),
-				],
-			})
+			List.findOneAndUpdate(
+				{
+					user: req?.user?._id || "",
+					$or: [
+						{ slug: listIdentifier },
+						...(listIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: listIdentifier }] : []),
+					],
+				},
+				{ ...(req?.body || {}) },
+				{ new: true }
+			)
 		);
 		if (listError) return next(listError);
 		if (!list) return next();
 
-		list = Object.assign(list, { ...req.body });
-		if (!list) return next();
-
-		const [saveError, newList] = await to(list.save());
-		if (saveError) return next(saveError);
-
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: newList }, flashes: req.flash() })
+			compoundResponse({ status: httpStatus.OK, entities: { data: list }, flashes: req.flash() })
 		);
 	},
 	deleteSingleList: async (req: Request, res: Response, next: NextFunction) => {

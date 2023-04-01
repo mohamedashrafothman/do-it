@@ -101,26 +101,24 @@ const LabelController = {
 
 		// eslint-disable-next-line prefer-const
 		let [labelError, label] = await to(
-			Label.findOne({
-				user: req?.user?._id || "",
-				$or: [
-					{ slug: labelIdentifier },
-					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
-				],
-			})
+			Label.findOneAndUpdate(
+				{
+					user: req?.user?._id || "",
+					$or: [
+						{ slug: labelIdentifier },
+						...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
+					],
+				},
+				{ ...(req?.body || {}) },
+				{ new: true }
+			)
 		);
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		label = Object.assign(label, { ...req.body });
-		if (!label) return next();
-
-		const [saveError, newLabel] = await to(label.save());
-		if (saveError) return next(saveError);
-
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: newLabel }, flashes: req.flash() })
+			compoundResponse({ status: httpStatus.OK, entities: { data: label }, flashes: req.flash() })
 		);
 	},
 	deleteSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
