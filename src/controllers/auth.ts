@@ -207,8 +207,8 @@ const AuthController = {
 			user = Object.assign(user, {
 				...(profile?.id ? { google: profile.id } : {}),
 				...(!user?.name && profile?.displayName ? { name: profile.displayName } : {}),
-				is_verified: true,
-				is_active: true,
+				verified: true,
+				active: true,
 			});
 
 			const [tokenError, token] = await to(Token.findOne({ user: user._id, kind: vars.tokenTypes.google }));
@@ -239,7 +239,7 @@ const AuthController = {
 		if (existsUserError) return done(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
-				User.updateOne({ _id: existsUser?._id }, { $set: { is_active: 1, is_verified: 1 } })
+				User.updateOne({ _id: existsUser?._id }, { $set: { active: 1, verified: 1 } })
 			);
 			if (updatedUserError) return done(updatedUserError);
 
@@ -264,8 +264,8 @@ const AuthController = {
 			name: profile.displayName,
 			email: profile?.emails?.[0]?.value || "",
 			google: profile.id,
-			is_active: true,
-			is_verified: true,
+			active: true,
+			verified: true,
 		};
 
 		const [newUserError, newUser] = await to(User.create(user));
@@ -312,8 +312,8 @@ const AuthController = {
 					? { name: `${profile.name.givenName} ${profile.name.middleName} ${profile.name.familyName}` }
 					: {}),
 				...(!user?.picture ? { picture: `https://graph.facebook.com/${profile.id}/picture?type=large` } : {}),
-				is_verified: true,
-				is_active: true,
+				verified: true,
+				active: true,
 			});
 
 			const [tokenError, token] = await to(Token.findOne({ user: user._id, kind: vars.tokenTypes.facebook }));
@@ -346,7 +346,7 @@ const AuthController = {
 		if (existsUserError) return done(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
-				User.updateOne({ _id: existsUser?._id }, { $set: { is_active: 1, is_verified: 1 } })
+				User.updateOne({ _id: existsUser?._id }, { $set: { active: 1, verified: 1 } })
 			);
 			if (updatedUserError) return done(updatedUserError);
 
@@ -376,8 +376,8 @@ const AuthController = {
 			picture: `https://graph.facebook.com/${profile.id}/picture?type=large`,
 			email: profile?.emails?.[0]?.value || "",
 			facebook: profile.id,
-			is_active: true,
-			is_verified: true,
+			active: true,
+			verified: true,
 		};
 
 		const [newUserError, newUser] = await to(User.create(user));
@@ -420,8 +420,8 @@ const AuthController = {
 				[req.params.provider]: req.body.provider_id,
 				...(req?.body?.name ? { name: req.body.name } : {}),
 				...(req?.body?.picture ? { picture: req.body.picture } : {}),
-				is_verified: true,
-				is_active: true,
+				verified: true,
+				active: true,
 			});
 
 			const [tokenError, token] = await to(
@@ -474,7 +474,7 @@ const AuthController = {
 					user: user._id,
 					token: refresh_token,
 					kind: vars.tokenTypes.jwt,
-					expire_at: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+					expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 				})
 			);
 			if (newRefreshTokenError) return next(newRefreshTokenError);
@@ -500,7 +500,7 @@ const AuthController = {
 		if (existsUserError) return next(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
-				User.updateOne({ _id: existsUser?._id }, { $set: { is_active: 1, is_verified: 1 } })
+				User.updateOne({ _id: existsUser?._id }, { $set: { active: 1, verified: 1 } })
 			);
 			if (updatedUserError) return next(updatedUserError);
 
@@ -520,7 +520,7 @@ const AuthController = {
 			);
 
 			const [userRefreshTokenError, userRefreshToken] = await to(
-				Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } })
+				Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } })
 			);
 			if (userRefreshTokenError) return next(userRefreshTokenError);
 
@@ -532,8 +532,7 @@ const AuthController = {
 						user: user._id,
 						token: refresh_token,
 						kind: vars.tokenTypes.jwt,
-						expire_at:
-							Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+						expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 					})
 				);
 			} else {
@@ -543,7 +542,7 @@ const AuthController = {
 						{
 							$set: {
 								token: refresh_token,
-								expire_at:
+								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 							},
@@ -559,7 +558,7 @@ const AuthController = {
 					status: httpStatus.OK,
 					entities: {
 						data: {
-							user: { ...user.toObject(), is_active: true, password: undefined },
+							user: { ...user.toObject(), active: true, password: undefined },
 							access_token,
 							refresh_token,
 							token_type: vars.auth.strategies.jwt.tokenType,
@@ -586,8 +585,8 @@ const AuthController = {
 				name: req.body.name,
 				...(req.body.picture && { picture: req.body.picture }),
 				[req.params.provider]: req.body.provider_id,
-				is_active: true,
-				is_verified: true,
+				active: true,
+				verified: true,
 			})
 		);
 		if (newUserError) return next(newUserError);
@@ -617,7 +616,7 @@ const AuthController = {
 				user: newUser._id,
 				token: refresh_token,
 				kind: vars.tokenTypes.jwt,
-				expire_at: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+				expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 			})
 		);
 		if (newRefreshTokenError) return next(newRefreshTokenError);
@@ -684,7 +683,7 @@ const AuthController = {
 		const [createdUserError, createdUser] = await to(
 			User.create({
 				...(req?.body || {}),
-				is_active: true,
+				active: true,
 			})
 		);
 		if (createdUserError) return next(createdUserError);
@@ -695,7 +694,7 @@ const AuthController = {
 				user: createdUser._id,
 				token,
 				kind: vars.tokenTypes.verifyEmail,
-				expire_at: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
+				expireAt: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
 			})
 		);
 		if (newVerifyEmailTokenError) return next(newVerifyEmailTokenError);
@@ -729,7 +728,7 @@ const AuthController = {
 				user: createdUser._id,
 				token: refresh_token,
 				kind: vars.tokenTypes.jwt,
-				expire_at: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+				expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 			})
 		);
 		if (newRefreshTokenError) return next(newRefreshTokenError);
@@ -769,7 +768,7 @@ const AuthController = {
 			}
 
 			const [updateUserError] = await to(
-				User.updateOne({ email: user.email, is_active: false }, { $set: { is_active: true } })
+				User.updateOne({ email: user.email, active: false }, { $set: { active: true } })
 			);
 			if (updateUserError) return next(updateUserError);
 
@@ -785,7 +784,7 @@ const AuthController = {
 			);
 
 			const [userRefreshTokenError, userRefreshToken] = await to(
-				Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } })
+				Token.findOne({ user: user._id, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } })
 			);
 			if (userRefreshTokenError) return next(userRefreshTokenError);
 			let newRefreshTokenError;
@@ -796,8 +795,7 @@ const AuthController = {
 						user: user._id,
 						token: refresh_token,
 						kind: vars.tokenTypes.jwt,
-						expire_at:
-							Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
+						expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 					})
 				);
 			} else {
@@ -807,7 +805,7 @@ const AuthController = {
 						{
 							$set: {
 								token: refresh_token,
-								expire_at:
+								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 							},
@@ -823,7 +821,7 @@ const AuthController = {
 					status: httpStatus.OK,
 					entities: {
 						data: {
-							user: { ...user.toObject(), is_active: true, password: undefined },
+							user: { ...user.toObject(), active: true, password: undefined },
 							access_token,
 							refresh_token,
 							token_type: vars.auth.strategies.jwt.tokenType,
@@ -847,7 +845,7 @@ const AuthController = {
 		);
 		if (deleteTokenError) return next(deleteTokenError);
 
-		const [updateUserError] = await to(User.updateOne({ _id }, { $set: { is_active: false } }));
+		const [updateUserError] = await to(User.updateOne({ _id }, { $set: { active: false } }));
 		if (updateUserError) return next(updateUserError);
 
 		req.flash("success", "Successfully logged out!");
@@ -862,7 +860,7 @@ const AuthController = {
 
 		const { refresh_token: refreshToken } = req.body as { refresh_token: string };
 		const [userRefreshTokenError, userRefreshToken] = await to(
-			Token.findOne({ token: refreshToken, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } })
+			Token.findOne({ token: refreshToken, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } })
 		);
 		if (userRefreshTokenError) return next(userRefreshTokenError);
 		if (!userRefreshToken) {
@@ -891,11 +889,11 @@ const AuthController = {
 
 				const [newRefreshTokenError] = await to(
 					Token.updateOne(
-						{ token: refreshToken, kind: vars.tokenTypes.jwt, expire_at: { $gt: Date.now() } },
+						{ token: refreshToken, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } },
 						{
 							$set: {
 								token: refresh_token,
-								expire_at:
+								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 							},
@@ -937,7 +935,7 @@ const AuthController = {
 
 		const token = await user.createHashToken();
 		const [resetPasswordTokenError, resetPasswordToken] = await to(
-			Token.findOne({ user: user._id, kind: vars.tokenTypes.resetPassword, expire_at: { $gt: Date.now() } })
+			Token.findOne({ user: user._id, kind: vars.tokenTypes.resetPassword, expireAt: { $gt: Date.now() } })
 		);
 		if (resetPasswordTokenError) return next(resetPasswordTokenError);
 
@@ -949,17 +947,17 @@ const AuthController = {
 					user: user._id,
 					token,
 					kind: vars.tokenTypes.resetPassword,
-					expire_at: Date.now() + 1000 * 60 * 60 * vars.password.resetTimeLimitInHours,
+					expireAt: Date.now() + 1000 * 60 * 60 * vars.password.resetTimeLimitInHours,
 				})
 			);
 		} else {
 			[newRefreshTokenError] = await to(
 				Token.updateOne(
-					{ user: user._id, kind: vars.tokenTypes.resetPassword, expire_at: { $gt: Date.now() } },
+					{ user: user._id, kind: vars.tokenTypes.resetPassword, expireAt: { $gt: Date.now() } },
 					{
 						$set: {
 							token,
-							expire_at: Date.now() + 1000 * 60 * 60 * vars.password.resetTimeLimitInHours,
+							expireAt: Date.now() + 1000 * 60 * 60 * vars.password.resetTimeLimitInHours,
 						},
 					}
 				)
@@ -996,7 +994,7 @@ const AuthController = {
 			Token.findOne({
 				token: req.params.token,
 				kind: vars.tokenTypes.resetPassword,
-				expire_at: { $gt: Date.now() },
+				expireAt: { $gt: Date.now() },
 			})
 		);
 		if (resetPasswordTokenError) return next(resetPasswordTokenError);
@@ -1028,7 +1026,7 @@ const AuthController = {
 			Token.deleteOne({
 				user: newUser._id,
 				kind: vars.tokenTypes.resetPassword,
-				expire_at: { $gt: Date.now() },
+				expireAt: { $gt: Date.now() },
 			})
 		);
 		if (deleteResetPasswordTokenError) return next(deleteResetPasswordTokenError);
@@ -1053,7 +1051,7 @@ const AuthController = {
 			Token.findOne({
 				token: req.params.token,
 				kind: vars.tokenTypes.verifyEmail,
-				expire_at: { $gt: Date.now() },
+				expireAt: { $gt: Date.now() },
 			})
 		);
 		if (verifyEmailTokenError) return next(verifyEmailTokenError);
@@ -1065,7 +1063,7 @@ const AuthController = {
 		}
 
 		const [userError] = await to(
-			User.findOneAndUpdate({ _id: verifyEmailToken.user, is_verified: { $lt: 1 } }, { $set: { is_verified: 1 } })
+			User.findOneAndUpdate({ _id: verifyEmailToken.user, verified: { $lt: 1 } }, { $set: { verified: 1 } })
 		);
 		if (userError) return next(userError);
 
@@ -1073,7 +1071,7 @@ const AuthController = {
 			Token.deleteOne({
 				token: req.params.token,
 				kind: vars.tokenTypes.verifyEmail,
-				expire_at: { $gt: Date.now() },
+				expireAt: { $gt: Date.now() },
 			})
 		);
 		if (deleteVerifyEmailTokenError) return next(deleteVerifyEmailTokenError);
@@ -1087,7 +1085,7 @@ const AuthController = {
 		);
 	},
 	getResendEmailVerification: async (req: Request, res: Response, next: NextFunction) => {
-		const [userError, user] = await to(User.findOne({ _id: req?.user?._id || "", is_verified: { $lt: 1 } }));
+		const [userError, user] = await to(User.findOne({ _id: req?.user?._id || "", verified: { $lt: 1 } }));
 		if (userError) return next(userError);
 		if (!user) {
 			req.flash("danger", "Email Already Verified!");
@@ -1097,7 +1095,7 @@ const AuthController = {
 		}
 
 		const [userRefreshTokenError, userRefreshToken] = await to(
-			Token.findOne({ user: user._id, kind: vars.tokenTypes.verifyEmail, expire_at: { $gt: Date.now() } })
+			Token.findOne({ user: user._id, kind: vars.tokenTypes.verifyEmail, expireAt: { $gt: Date.now() } })
 		);
 		if (userRefreshTokenError) return next(userRefreshTokenError);
 
@@ -1110,7 +1108,7 @@ const AuthController = {
 					user: user._id,
 					token,
 					kind: vars.tokenTypes.verifyEmail,
-					expire_at: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
+					expireAt: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
 				})
 			);
 		} else {
@@ -1120,7 +1118,7 @@ const AuthController = {
 					{
 						$set: {
 							token,
-							expire_at: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
+							expireAt: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
 						},
 					}
 				)

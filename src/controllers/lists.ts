@@ -136,10 +136,31 @@ const ListController = {
 		if (listError) return next(listError);
 		if (!list) return next();
 
-		const [deleteListError] = await to(List.deleteOne({ _id: list?._id }));
+		const [deleteListError] = await to(List.deleteById(list?._id));
 		if (deleteListError) return next(deleteListError);
 
 		req.flash("success", "Successfully Deleted.");
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	restoreSingleList: async (req: Request, res: Response, next: NextFunction) => {
+		const { list: listIdentifier } = req.params;
+
+		const [listError, list] = await to(
+			List.findOneWithDeleted({
+				user: req?.user?._id || "",
+				$or: [
+					{ slug: listIdentifier },
+					...(listIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: listIdentifier }] : []),
+				],
+			})
+		);
+		if (listError) return next(listError);
+		if (!list) return next();
+
+		const [restoreListError] = await to(List.restore());
+		if (restoreListError) return next(restoreListError);
+
+		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };

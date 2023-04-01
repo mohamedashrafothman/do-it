@@ -8,10 +8,7 @@ export interface ISessionDocument extends ISession, Document {}
 export type ISessionModel = Model<ISessionDocument>;
 
 // schema definition
-const SessionSchema = new Schema<ISessionDocument, object, ISessionDocument>(
-	{},
-	{ timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
-);
+const SessionSchema = new Schema<ISessionDocument, object, ISessionDocument>({}, { timestamps: true });
 
 // modal definition
 const SessionModal = model<ISessionDocument, PaginateModel<ISessionDocument> & ISessionModel>("Session", SessionSchema);

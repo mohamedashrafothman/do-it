@@ -63,7 +63,7 @@ const UsersController = {
 		}
 	},
 	getUsers: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, status: is_verified, ...query } = req.query;
+		const { q, status: verified, ...query } = req.query;
 		const querySearchFields = ["name", "email", "role"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
@@ -81,7 +81,7 @@ const UsersController = {
 						})),
 					}) ||
 						{}),
-					...((is_verified && is_verified !== "all" && { is_verified }) || {}),
+					...((verified && verified !== "all" && { verified }) || {}),
 					_id: { $ne: req?.user?._id || "" },
 				},
 				{ ...query }
@@ -161,7 +161,7 @@ const UsersController = {
 			});
 		}
 
-		user = Object.assign(user, { ...reqBody, ...(isEmailModified ? { is_verified: false } : {}) });
+		user = Object.assign(user, { ...reqBody, ...(isEmailModified ? { verified: false } : {}) });
 		if (!user) return next();
 
 		const [saveError, newUser] = await to(user.save());
@@ -174,7 +174,7 @@ const UsersController = {
 					user: newUser._id,
 					token,
 					kind: vars.tokenTypes.verifyEmail,
-					expire_at: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
+					expireAt: Date.now() + 1000 * 60 * vars.email.emailVerifyTokenExpiresInMinutes,
 				})
 			);
 			if (newVerifyEmailToken) return next(newVerifyEmailToken);
@@ -244,7 +244,7 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		const [deleteUserError] = await to(User.deleteOne({ _id: user?._id }));
+		const [deleteUserError] = await to(user.deleteOne());
 		if (deleteUserError) return next(deleteUserError);
 
 		const [deleteSessionsError] = await to(Session.deleteMany({ "session.passport.user._id": user?._id }));

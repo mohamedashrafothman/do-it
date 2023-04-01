@@ -4,5 +4,5 @@ export default interface Token {
 	user: Types.ObjectId;
 	kind: string;
 	token: string;
-	expire_at: Date;
+	expireAt: Date;
 }

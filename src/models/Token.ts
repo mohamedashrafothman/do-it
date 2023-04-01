@@ -14,9 +14,9 @@ const TokenSchema = new Schema<ITokenDocument, object, ITokenDocument>(
 		user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
 		kind: { type: String, required: true, enum: [...Object.values(vars.tokenTypes)] },
 		token: { type: String, required: true, index: true },
-		expire_at: { type: Date },
+		expireAt: { type: Date },
 	},
-	{ timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
+	{ timestamps: true }
 );
 
 // modal definition

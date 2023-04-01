@@ -16,6 +16,10 @@ router
 	.get(labelsController.getSingleLabel)
 	.patch(labelsController.validator("update"), labelsController.updateSingleLabel)
 	.delete(labelsController.deleteSingleLabel);
+router
+	.route("/:label/restore")
+	.all(allowMethods(["patch"]))
+	.patch(labelsController.restoreSingleLabel);
 
 // Exporting router
 export default router;

@@ -16,6 +16,10 @@ router
 	.get(listsController.getSingleList)
 	.patch(listsController.validator("update"), listsController.updateSingleList)
 	.delete(listsController.deleteSingleList);
+router
+	.route("/:list/restore")
+	.all(allowMethods(["patch"]))
+	.patch(listsController.restoreSingleList);
 
 // Exporting router
 export default router;

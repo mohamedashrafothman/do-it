@@ -36,12 +36,12 @@ const UserSchema: Schema<IUserDocument, object, IUserDocument> = new Schema(
 		slug: { type: String, slug: "name", unique: true, index: true, slugPaddingSize: 6 },
 		password: { type: String },
 		picture: { type: String },
-		is_active: { type: Boolean, default: false },
-		is_verified: { type: Boolean, default: false },
+		active: { type: Boolean, default: false },
+		verified: { type: Boolean, default: false },
 		google: { type: String, default: undefined },
 		facebook: { type: String, default: undefined },
 	},
-	{ timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
+	{ timestamps: true }
 );
 
 // schema methods

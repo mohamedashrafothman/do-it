@@ -136,10 +136,31 @@ const LabelController = {
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		const [deleteLabelError] = await to(Label.deleteOne({ _id: label?._id }));
+		const [deleteLabelError] = await to(Label.deleteById(label?._id));
 		if (deleteLabelError) return next(deleteLabelError);
 
 		req.flash("success", "Successfully Deleted.");
+		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	restoreSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
+		const { label: labelIdentifier } = req.params;
+
+		const [labelError, label] = await to(
+			Label.findOneWithDeleted({
+				user: req?.user?._id || "",
+				$or: [
+					{ slug: labelIdentifier },
+					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
+				],
+			})
+		);
+		if (labelError) return next(labelError);
+		if (!label) return next();
+
+		const [restoreLabelError] = await to(Label.restore());
+		if (restoreLabelError) return next(restoreLabelError);
+
+		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };

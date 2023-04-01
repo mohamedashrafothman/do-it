@@ -3,8 +3,8 @@
 	"version": "0.1.0",
 	"private": true,
 	"engines": {
-		"node": ">=14.0.0",
-		"npm": ">=6.0.0"
+		"node": ">=16.0.0",
+		"npm": ">=8.0.0"
 	},
 	"description": "",
 	"keywords": [],
@@ -49,6 +49,7 @@
 		"@types/http-errors": "^2.0.1",
 		"@types/i18n": "^0.13.6",
 		"@types/method-override": "^0.0.32",
+		"@types/mongoose-delete": "^0.5.9",
 		"@types/morgan": "^1.9.4",
 		"@types/node": "^18.15.9",
 		"@types/nodemailer": "^6.4.7",
@@ -104,6 +105,7 @@
 		"moment": "^2.29.4",
 		"mongo-morgan-ext": "^1.0.2",
 		"mongoose": "^7.0.2",
+		"mongoose-delete": "^0.5.4",
 		"mongoose-paginate-v2": "^1.7.1",
 		"mongoose-slug-updater": "^3.3.0",
 		"morgan": "^1.10.0",
