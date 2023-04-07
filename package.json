@@ -13,9 +13,10 @@
 	"main": "build/bin/www.js",
 	"scripts": {
 		"clean": "rimraf build",
+		"dev": "nodemon",
 		"prebuild": "npm run clean",
 		"build": "npx tsc",
-		"dev": "nodemon",
+		"prestart": "npm run build",
 		"start": "cross-env NODE_ENV=production node ./build/bin/www.js",
 		"lint": "eslint ./src/**/*.ts",
 		"prepare": "husky install",
