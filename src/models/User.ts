@@ -34,14 +34,17 @@ const UserSchema: Schema<IUserDocument, object, IUserDocument> = new Schema(
 		},
 		name: { type: String, trim: true, required: true },
 		slug: { type: String, slug: "name", unique: true, index: true, slugPaddingSize: 6 },
-		password: { type: String },
+		password: { type: String, hidden: true },
 		picture: { type: String },
 		active: { type: Boolean, default: false },
 		verified: { type: Boolean, default: false },
 		google: { type: String, default: undefined },
 		facebook: { type: String, default: undefined },
 	},
-	{ timestamps: true }
+	{
+		toJSON: { virtual: true, transform: (_doc, { password: _password, ...ret }: IUserDocument) => ret },
+		timestamps: true,
+	}
 );
 
 // schema methods

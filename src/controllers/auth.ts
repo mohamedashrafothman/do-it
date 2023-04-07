@@ -485,7 +485,7 @@ const AuthController = {
 					status: httpStatus.CREATED,
 					entities: {
 						data: {
-							user: { ...user.toObject(), password: undefined },
+							user: { ...user.toJSON() },
 							access_token,
 							refresh_token,
 							token_type: vars.auth.strategies.jwt.tokenType,
@@ -558,7 +558,7 @@ const AuthController = {
 					status: httpStatus.OK,
 					entities: {
 						data: {
-							user: { ...user.toObject(), active: true, password: undefined },
+							user: { ...user.toJSON(), active: true },
 							access_token,
 							refresh_token,
 							token_type: vars.auth.strategies.jwt.tokenType,
@@ -627,7 +627,7 @@ const AuthController = {
 				status: httpStatus.CREATED,
 				entities: {
 					data: {
-						user: { ...newUser.toObject(), password: undefined },
+						user: { ...newUser.toJSON() },
 						access_token,
 						refresh_token,
 						token_type: vars.auth.strategies.jwt.tokenType,
@@ -738,7 +738,7 @@ const AuthController = {
 				status: httpStatus.CREATED,
 				entities: {
 					data: {
-						user: { ...createdUser.toObject(), password: undefined },
+						user: { ...(createdUser?.toJSON() || {}) },
 						access_token,
 						refresh_token,
 						token_type: vars.auth.strategies.jwt.tokenType,
@@ -821,7 +821,7 @@ const AuthController = {
 					status: httpStatus.OK,
 					entities: {
 						data: {
-							user: { ...user.toObject(), active: true, password: undefined },
+							user: { ...(user.toJSON() || {}), active: true },
 							access_token,
 							refresh_token,
 							token_type: vars.auth.strategies.jwt.tokenType,

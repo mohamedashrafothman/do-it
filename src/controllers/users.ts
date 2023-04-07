@@ -101,15 +101,12 @@ const UsersController = {
 	getSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const { user: userIdentifier } = req.params;
 		const [userError, user] = await to(
-			User.findOne(
-				{
-					$or: [
-						{ slug: userIdentifier },
-						...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
-					],
-				},
-				"-password"
-			)
+			User.findOne({
+				$or: [
+					{ slug: userIdentifier },
+					...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
+				],
+			})
 		);
 		if (userError) return next(userError);
 		if (!user) return next();
@@ -118,7 +115,7 @@ const UsersController = {
 	},
 	getCurrentAuthenticatedUser: async (req: Request, res: Response, next: NextFunction) => {
 		const _id = req?.user?._id || "";
-		const [userError, user] = await to(User.findOne({ _id }, "-password"));
+		const [userError, user] = await to(User.findOne({ _id }));
 		if (userError) return next(userError);
 		if (!user) return next();
 
@@ -231,15 +228,12 @@ const UsersController = {
 		const { user: userIdentifier } = req.params;
 
 		const [userError, user] = await to(
-			User.findOne(
-				{
-					$or: [
-						{ slug: userIdentifier },
-						...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
-					],
-				},
-				"-password"
-			)
+			User.findOne({
+				$or: [
+					{ slug: userIdentifier },
+					...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
+				],
+			})
 		);
 		if (userError) return next(userError);
 		if (!user) return next();
