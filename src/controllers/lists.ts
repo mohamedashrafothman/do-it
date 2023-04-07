@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import httpStatus from "http-status";
 import List from "../models/List";
-import { compoundResponse } from "../utils/helpers";
+import { formatResponseObject } from "../utils/helpers";
 
 const ListController = {
 	validator: (method: string) => {
@@ -21,8 +21,8 @@ const ListController = {
 	postSingleList: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const [createdListError, createdList] = await to(
@@ -32,7 +32,7 @@ const ListController = {
 
 		req.flash("success", "Successfully created!");
 		res.status(httpStatus.CREATED).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.CREATED,
 				entities: { data: { list: createdList } },
 				flashes: req.flash(),
@@ -68,7 +68,7 @@ const ListController = {
 		const { docs, ...pagination } = paginatedLists;
 
 		return res.status(httpStatus.OK).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.OK,
 				entities: { data: [...(docs || [])], meta: { pagination, sort } },
 			})
@@ -88,13 +88,13 @@ const ListController = {
 		if (listError) return next(listError);
 		if (!list) return next();
 
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: list } }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: list } }));
 	},
 	updateSingleList: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { list: listIdentifier } = req.params;
@@ -118,7 +118,7 @@ const ListController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: list }, flashes: req.flash() })
+			formatResponseObject({ status: httpStatus.OK, entities: { data: list }, flashes: req.flash() })
 		);
 	},
 	deleteSingleList: async (req: Request, res: Response, next: NextFunction) => {
@@ -140,7 +140,7 @@ const ListController = {
 		if (deleteListError) return next(deleteListError);
 
 		req.flash("success", "Successfully Deleted.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleList: async (req: Request, res: Response, next: NextFunction) => {
 		const { list: listIdentifier } = req.params;
@@ -161,7 +161,7 @@ const ListController = {
 		if (restoreListError) return next(restoreListError);
 
 		req.flash("success", "Successfully Restored.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

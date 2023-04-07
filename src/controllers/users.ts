@@ -7,7 +7,7 @@ import Session from "../models/Session";
 import Token from "../models/Token";
 import User from "../models/User";
 import emailService from "../services/email";
-import { compoundResponse, isAPIHeaders } from "../utils/helpers";
+import { formatResponseObject, isAPIHeaders } from "../utils/helpers";
 import vars from "../utils/vars";
 
 const UsersController = {
@@ -92,7 +92,7 @@ const UsersController = {
 		const { docs, ...pagination } = paginatedUsers;
 
 		return res.status(httpStatus.OK).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.OK,
 				entities: { data: [...(docs || [])], meta: { pagination, sort } },
 			})
@@ -111,7 +111,7 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: user } }));
 	},
 	getCurrentAuthenticatedUser: async (req: Request, res: Response, next: NextFunction) => {
 		const _id = req?.user?._id || "";
@@ -119,13 +119,13 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: user } }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: user } }));
 	},
 	updateSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { user: userIdentifier } = req.params;
@@ -221,7 +221,7 @@ const UsersController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: newUser }, flashes: req.flash() })
+			formatResponseObject({ status: httpStatus.OK, entities: { data: newUser }, flashes: req.flash() })
 		);
 	},
 	deleteSingleUser: async (req: Request, res: Response, next: NextFunction) => {
@@ -248,7 +248,7 @@ const UsersController = {
 		if (deleteTokenError) return next(deleteTokenError);
 
 		req.flash("success", "Successfully Deleted.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

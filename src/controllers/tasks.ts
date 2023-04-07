@@ -4,7 +4,7 @@ import { body, validationResult } from "express-validator";
 import httpStatus from "http-status";
 import Step from "../models/Step";
 import Task from "../models/Task";
-import { compoundResponse } from "../utils/helpers";
+import { formatResponseObject } from "../utils/helpers";
 
 const TaskController = {
 	validator: (method: string) => {
@@ -29,8 +29,8 @@ const TaskController = {
 	postSingleTask: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { steps = [], ...body } = req.body || {};
@@ -51,7 +51,7 @@ const TaskController = {
 
 		req.flash("success", "Successfully created!");
 		res.status(httpStatus.CREATED).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.CREATED,
 				entities: { data: { task: createdTask } },
 				flashes: req.flash(),
@@ -87,7 +87,7 @@ const TaskController = {
 		const { docs, ...pagination } = paginatedTasks;
 
 		return res.status(httpStatus.OK).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.OK,
 				entities: { data: [...(docs || [])], meta: { pagination, sort } },
 			})
@@ -107,13 +107,13 @@ const TaskController = {
 		if (taskError) return next(taskError);
 		if (!task) return next();
 
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: task } }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: task } }));
 	},
 	updateSingleTask: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { task: taskIdentifier } = req.params;
@@ -137,7 +137,7 @@ const TaskController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: task }, flashes: req.flash() })
+			formatResponseObject({ status: httpStatus.OK, entities: { data: task }, flashes: req.flash() })
 		);
 	},
 	deleteSingleTask: async (req: Request, res: Response, next: NextFunction) => {
@@ -159,7 +159,7 @@ const TaskController = {
 		if (deleteTaskError) return next(deleteTaskError);
 
 		req.flash("success", "Successfully Deleted.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleTask: async (req: Request, res: Response, next: NextFunction) => {
 		const { task: taskIdentifier } = req.params;
@@ -180,7 +180,7 @@ const TaskController = {
 		if (restoreTaskError) return next(restoreTaskError);
 
 		req.flash("success", "Successfully Restored.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

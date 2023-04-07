@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import httpStatus from "http-status";
 import Label from "../models/Label";
-import { compoundResponse } from "../utils/helpers";
+import { formatResponseObject } from "../utils/helpers";
 
 const LabelController = {
 	validator: (method: string) => {
@@ -21,8 +21,8 @@ const LabelController = {
 	postSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const [createdLabelError, createdLabel] = await to(
@@ -32,7 +32,7 @@ const LabelController = {
 
 		req.flash("success", "Successfully created!");
 		res.status(httpStatus.CREATED).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.CREATED,
 				entities: { data: { label: createdLabel } },
 				flashes: req.flash(),
@@ -68,7 +68,7 @@ const LabelController = {
 		const { docs, ...pagination } = paginatedLabels;
 
 		return res.status(httpStatus.OK).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.OK,
 				entities: { data: [...(docs || [])], meta: { pagination, sort } },
 			})
@@ -88,13 +88,13 @@ const LabelController = {
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, entities: { data: label } }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: label } }));
 	},
 	updateSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { label: labelIdentifier } = req.params;
@@ -118,7 +118,7 @@ const LabelController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			compoundResponse({ status: httpStatus.OK, entities: { data: label }, flashes: req.flash() })
+			formatResponseObject({ status: httpStatus.OK, entities: { data: label }, flashes: req.flash() })
 		);
 	},
 	deleteSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
@@ -140,7 +140,7 @@ const LabelController = {
 		if (deleteLabelError) return next(deleteLabelError);
 
 		req.flash("success", "Successfully Deleted.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
 		const { label: labelIdentifier } = req.params;
@@ -161,7 +161,7 @@ const LabelController = {
 		if (restoreLabelError) return next(restoreLabelError);
 
 		req.flash("success", "Successfully Restored.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

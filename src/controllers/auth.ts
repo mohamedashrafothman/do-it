@@ -10,7 +10,7 @@ import Email from "../models/Email";
 import Token from "../models/Token";
 import User, { type IUserDocument } from "../models/User";
 import emailService from "../services/email";
-import { compoundResponse, isAPIHeaders } from "../utils/helpers";
+import { formatResponseObject, isAPIHeaders } from "../utils/helpers";
 import vars from "../utils/vars";
 
 const AuthController = {
@@ -394,8 +394,8 @@ const AuthController = {
 	postSocialUser: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY }));
 		}
 
 		if (req.isAuthenticated()) {
@@ -481,7 +481,7 @@ const AuthController = {
 
 			req.flash("success", `Account ${req.params.provider} has been linked`);
 			res.status(httpStatus.CREATED).json(
-				compoundResponse({
+				formatResponseObject({
 					status: httpStatus.CREATED,
 					entities: {
 						data: {
@@ -554,7 +554,7 @@ const AuthController = {
 
 			req.flash("success", "Welcome Back!");
 			return res.status(httpStatus.OK).json(
-				compoundResponse({
+				formatResponseObject({
 					status: httpStatus.OK,
 					entities: {
 						data: {
@@ -623,7 +623,7 @@ const AuthController = {
 
 		req.flash("success", "Account Registered Successfully");
 		res.status(httpStatus.CREATED).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.CREATED,
 				entities: {
 					data: {
@@ -661,13 +661,13 @@ const AuthController = {
 		if (updateUserError) return next(updateUserError);
 
 		req.flash("success", `${provider} account has been unlinked.`);
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	postRegister: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { email } = req.body;
@@ -677,7 +677,7 @@ const AuthController = {
 			req.flash("danger", `Account already exists, try to login instead.`);
 			return res
 				.status(httpStatus.CONFLICT)
-				.json(compoundResponse({ status: httpStatus.CONFLICT, flashes: req.flash() }));
+				.json(formatResponseObject({ status: httpStatus.CONFLICT, flashes: req.flash() }));
 		}
 
 		const [createdUserError, createdUser] = await to(
@@ -734,7 +734,7 @@ const AuthController = {
 		if (newRefreshTokenError) return next(newRefreshTokenError);
 
 		res.status(httpStatus.CREATED).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.CREATED,
 				entities: {
 					data: {
@@ -751,8 +751,8 @@ const AuthController = {
 	postLogin: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { email } = req.body;
@@ -764,7 +764,7 @@ const AuthController = {
 			if (compareError) return next(compareError);
 			if (!isMatch) {
 				req.flash("danger", "Your credentials doesn't match our records.");
-				return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY }));
+				return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY }));
 			}
 
 			const [updateUserError] = await to(
@@ -817,7 +817,7 @@ const AuthController = {
 
 			req.flash("success", "Welcome Back!");
 			return res.status(httpStatus.OK).json(
-				compoundResponse({
+				formatResponseObject({
 					status: httpStatus.OK,
 					entities: {
 						data: {
@@ -849,13 +849,13 @@ const AuthController = {
 		if (updateUserError) return next(updateUserError);
 
 		req.flash("success", "Successfully logged out!");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	postRefreshToken: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { refresh_token: refreshToken } = req.body as { refresh_token: string };
@@ -867,14 +867,14 @@ const AuthController = {
 			req.flash("danger", "Token has been expired, please login again!");
 			return res
 				.status(httpStatus.FORBIDDEN)
-				.json(compoundResponse({ status: httpStatus.FORBIDDEN, flashes: req.flash() }));
+				.json(formatResponseObject({ status: httpStatus.FORBIDDEN, flashes: req.flash() }));
 		}
 
 		jsonwebtoken.verify(
 			refreshToken,
 			vars.auth.strategies.jwt.refreshTokenSecret,
 			async (error: VerifyErrors | null, payload: JwtPayload | string | undefined) => {
-				if (error) return next(compoundResponse({ status: httpStatus.FORBIDDEN, error }));
+				if (error) return next(formatResponseObject({ status: httpStatus.FORBIDDEN, error }));
 				const _id = payload?.sub || "";
 				const access_token = jsonwebtoken.sign(
 					{ sub: _id.toString(), iat: Math.floor(Date.now() / 1000) },
@@ -903,7 +903,7 @@ const AuthController = {
 				if (newRefreshTokenError) return next(newRefreshTokenError);
 
 				return res.status(httpStatus.OK).json(
-					compoundResponse({
+					formatResponseObject({
 						status: httpStatus.OK,
 						entities: {
 							data: { access_token, refresh_token, token_type: vars.auth.strategies.jwt.tokenType },
@@ -916,8 +916,8 @@ const AuthController = {
 	postForgotPassword: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const { email } = req.body;
@@ -926,7 +926,7 @@ const AuthController = {
 		if (!user) {
 			req.flash("danger", "No account found with this email.");
 			return res.status(httpStatus.NOT_FOUND).json(
-				compoundResponse({
+				formatResponseObject({
 					status: httpStatus.NOT_FOUND,
 					flashes: req.flash(),
 				})
@@ -981,13 +981,13 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "You have been emailed a reset password link.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	postResetPassword: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
 		if (!validationErrors.isEmpty()) {
-			req.flash("danger", JSON.stringify(validationErrors.mapped()));
-			return next(compoundResponse({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
 		const [resetPasswordTokenError, resetPasswordToken] = await to(
@@ -1001,7 +1001,7 @@ const AuthController = {
 		if (!resetPasswordToken) {
 			req.flash("danger", "token is invalid or has expired.");
 			return res.status(httpStatus.NOT_FOUND).json(
-				compoundResponse({
+				formatResponseObject({
 					status: httpStatus.NOT_FOUND,
 					flashes: req.flash(),
 				})
@@ -1044,7 +1044,7 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "successfully updated password.");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	getEmailVerification: async (req: Request, res: Response, next: NextFunction) => {
 		const [verifyEmailTokenError, verifyEmailToken] = await to(
@@ -1059,7 +1059,7 @@ const AuthController = {
 			req.flash("danger", "token is invalid or has expired.");
 			return res
 				.status(httpStatus.NOT_FOUND)
-				.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
+				.json(formatResponseObject({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
 		}
 
 		const [userError] = await to(
@@ -1078,7 +1078,7 @@ const AuthController = {
 
 		req.flash("success", "Your account has been Verified");
 		return res.status(httpStatus.OK).json(
-			compoundResponse({
+			formatResponseObject({
 				status: httpStatus.OK,
 				flashes: req.flash(),
 			})
@@ -1091,7 +1091,7 @@ const AuthController = {
 			req.flash("danger", "Email Already Verified!");
 			return res
 				.status(httpStatus.NOT_FOUND)
-				.json(compoundResponse({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
+				.json(formatResponseObject({ status: httpStatus.NOT_FOUND, flashes: req.flash() }));
 		}
 
 		const [userRefreshTokenError, userRefreshToken] = await to(
@@ -1140,7 +1140,7 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "Email Verification sent successfully!");
-		res.status(httpStatus.OK).json(compoundResponse({ status: httpStatus.OK, flashes: req.flash() }));
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 };
 

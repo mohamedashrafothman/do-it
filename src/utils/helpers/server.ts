@@ -2,7 +2,7 @@ import { Request } from "express";
 import { PaginateResult } from "mongoose";
 import vars from "../vars";
 
-export type CompoundResponseType<T> = {
+export type FormatResponseObjectType<T> = {
 	pageTitle?: string;
 	title?: string;
 	description?: string;
@@ -33,6 +33,7 @@ export const isAPIHeaders = (req: Request) =>
 	req.get("Content-Type") === vars.api.acceptableMediaType && req.get("Accept") === vars.api.acceptableMediaType;
 
 /**
- * construct response object
+ * format response object
  */
-export const compoundResponse = <T = void>(options: CompoundResponseType<T>): CompoundResponseType<T> => options;
+export const formatResponseObject = <T = void>(options: FormatResponseObjectType<T>): FormatResponseObjectType<T> =>
+	options;
