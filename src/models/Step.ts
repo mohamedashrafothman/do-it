@@ -15,7 +15,7 @@ const StepSchema = new Schema<IStepDocument, object, IStepDocument>(
 		title: { type: String, required: true, trim: true },
 		dueDate: { type: Date },
 		completed: { type: Boolean, default: false },
-		orderInList: { type: Number, required: true },
+		order: { type: Number, required: true },
 		totalRepeatCount: { type: Number, default: 1 },
 		currentRepeatCount: { type: Number, default: 1 },
 	},

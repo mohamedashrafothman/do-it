@@ -5,7 +5,7 @@ export default interface Step {
 	title: string;
 	dueDate?: Date;
 	completed: boolean;
-	orderInList: number;
+	order: number;
 	totalRepeatCount?: number;
 	currentRepeatCount?: number;
 }

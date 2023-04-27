@@ -20,7 +20,7 @@ const TaskController = {
 						.isArray()
 						.withMessage("Steps must be in array format!"),
 					body("steps.*.title").notEmpty().withMessage("You must supply a step title!").trim().escape(),
-					body("steps.*.orderInList").notEmpty().withMessage("You must supply a step order in list!"),
+					body("steps.*.order").notEmpty().withMessage("You must supply a step order in list!"),
 				];
 			default:
 				return [];
