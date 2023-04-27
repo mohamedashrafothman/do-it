@@ -53,7 +53,7 @@ const TaskController = {
 		res.status(httpStatus.CREATED).json(
 			formatResponseObject({
 				status: httpStatus.CREATED,
-				entities: { data: { task: createdTask } },
+				entities: { data: { ...(createdTask?.toJSON() || {}) } },
 				flashes: req.flash(),
 			})
 		);
@@ -79,7 +79,7 @@ const TaskController = {
 						{}),
 					user: req?.user?._id || "",
 				},
-				{ ...query }
+				{ ...(query || {}) }
 			)
 		);
 		if (paginatedTasksError) return next(paginatedTasksError);
@@ -137,7 +137,11 @@ const TaskController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			formatResponseObject({ status: httpStatus.OK, entities: { data: task }, flashes: req.flash() })
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: { ...(task?.toJSON() || {}) } },
+				flashes: req.flash(),
+			})
 		);
 	},
 	deleteSingleTask: async (req: Request, res: Response, next: NextFunction) => {

@@ -3,9 +3,6 @@ import { PaginateResult } from "mongoose";
 import vars from "../vars";
 
 export type FormatResponseObjectType<T> = {
-	pageTitle?: string;
-	title?: string;
-	description?: string;
 	status?: number;
 	entities?: {
 		data?: T | T[];

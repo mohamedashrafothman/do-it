@@ -34,7 +34,7 @@ const ListController = {
 		res.status(httpStatus.CREATED).json(
 			formatResponseObject({
 				status: httpStatus.CREATED,
-				entities: { data: { list: createdList } },
+				entities: { data: { ...(createdList?.toJSON() || {}) } },
 				flashes: req.flash(),
 			})
 		);
@@ -118,7 +118,11 @@ const ListController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			formatResponseObject({ status: httpStatus.OK, entities: { data: list }, flashes: req.flash() })
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: { ...(list?.toJSON() || {}) } },
+				flashes: req.flash(),
+			})
 		);
 	},
 	deleteSingleList: async (req: Request, res: Response, next: NextFunction) => {

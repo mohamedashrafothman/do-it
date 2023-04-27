@@ -107,6 +107,7 @@
 		"moment": "^2.29.4",
 		"mongo-morgan-ext": "^1.0.2",
 		"mongoose": "^7.0.2",
+		"mongoose-autopopulate": "^1.0.0",
 		"mongoose-delete": "^0.5.4",
 		"mongoose-paginate-v2": "^1.7.1",
 		"mongoose-slug-updater": "^3.3.0",

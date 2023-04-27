@@ -1,4 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
+import mongooseAutopopulate from "mongoose-autopopulate";
 import IStep from "../interfaces/Step.interface";
 
 // adding schema methods here
@@ -10,7 +11,7 @@ export type IStepModel = Model<IStepDocument>;
 // schema definition
 const StepSchema = new Schema<IStepDocument, object, IStepDocument>(
 	{
-		user: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+		user: { type: Schema.Types.ObjectId, required: true, ref: "User", autopopulate: true },
 		title: { type: String, required: true, trim: true },
 		dueDate: { type: Date },
 		completed: { type: Boolean, default: false },
@@ -20,6 +21,9 @@ const StepSchema = new Schema<IStepDocument, object, IStepDocument>(
 	},
 	{ timestamps: true }
 );
+
+// schema plugins
+StepSchema.plugin(mongooseAutopopulate);
 
 // modal definition
 const StepModal = model<IStepDocument, PaginateModel<IStepDocument> & IStepModel>("Step", StepSchema);

@@ -34,7 +34,7 @@ const LabelController = {
 		res.status(httpStatus.CREATED).json(
 			formatResponseObject({
 				status: httpStatus.CREATED,
-				entities: { data: { label: createdLabel } },
+				entities: { data: { ...(createdLabel.toJSON() || {}) } },
 				flashes: req.flash(),
 			})
 		);
@@ -88,7 +88,9 @@ const LabelController = {
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, entities: { data: label } }));
+		res.status(httpStatus.OK).json(
+			formatResponseObject({ status: httpStatus.OK, entities: { data: { ...(label?.toJSON() || {}) } } })
+		);
 	},
 	updateSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
 		const validationErrors = validationResult(req);
@@ -118,7 +120,11 @@ const LabelController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			formatResponseObject({ status: httpStatus.OK, entities: { data: label }, flashes: req.flash() })
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: { ...(label?.toJSON() || {}) } },
+				flashes: req.flash(),
+			})
 		);
 	},
 	deleteSingleLabel: async (req: Request, res: Response, next: NextFunction) => {

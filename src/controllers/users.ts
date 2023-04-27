@@ -221,7 +221,11 @@ const UsersController = {
 
 		req.flash("success", "successfully updated.");
 		res.status(httpStatus.OK).json(
-			formatResponseObject({ status: httpStatus.OK, entities: { data: newUser }, flashes: req.flash() })
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: { ...(newUser?.toJSON() || {}) } },
+				flashes: req.flash(),
+			})
 		);
 	},
 	deleteSingleUser: async (req: Request, res: Response, next: NextFunction) => {
