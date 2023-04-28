@@ -30,7 +30,7 @@ const UsersController = {
 							icloud_remove_subaddress: false,
 						}),
 					body("name").optional().notEmpty().withMessage("You must supply a name!").trim().escape(),
-					body("old_password")
+					body("oldPassword")
 						.if(body("password").exists())
 						.notEmpty()
 						.withMessage("Old Password can't be blank!")
@@ -41,7 +41,7 @@ const UsersController = {
 							"Password must include one lowercase character, one uppercase character, a number, and a special character."
 						),
 					body("password")
-						.if(body("old_password").exists())
+						.if(body("oldPassword").exists())
 						.notEmpty()
 						.withMessage("Password can't be blank!")
 						.isLength({ min: 8 })
@@ -50,7 +50,7 @@ const UsersController = {
 						.withMessage(
 							"Password must include one lowercase character, one uppercase character, a number, and a special character."
 						),
-					body("password_confirmation")
+					body("passwordConfirmation")
 						.if(body("password").exists())
 						.notEmpty()
 						.withMessage("Password confirmation can't be blank!")
@@ -68,8 +68,8 @@ const UsersController = {
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
 			{ name: "Name Z-A", value: { name: -1 } },
-			{ name: "Created Date Ascending", value: { created_at: 1 } },
-			{ name: "Created Date Descending", value: { created_at: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
 		];
 
 		const [paginatedUsersError, paginatedUsers] = await to(
@@ -129,12 +129,7 @@ const UsersController = {
 		}
 
 		const { user: userIdentifier } = req.params;
-		const {
-			old_password: _old_password,
-			password_confirmation: _password_confirmation,
-			logout,
-			...reqBody
-		} = req.body;
+		const { oldPassword: _oldPassword, passwordConfirmation: _passwordConfirmation, logout, ...reqBody } = req.body;
 		let isPasswordModified;
 		let isEmailModified;
 

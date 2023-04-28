@@ -41,7 +41,7 @@ const AuthController = {
 						.withMessage(
 							"Password must include one lowercase character, one uppercase character, a number, and a special character."
 						),
-					body("password_confirmation")
+					body("passwordConfirmation")
 						.notEmpty()
 						.withMessage("Password confirmation can't be blank!")
 						.custom((value, { req }) => value === req.body.password)
@@ -89,12 +89,12 @@ const AuthController = {
 							icloud_remove_subaddress: false,
 						}),
 					body("name").notEmpty().withMessage("You must supply a name!").trim().escape(),
-					body("provider_id").notEmpty().withMessage("Provider id can't be blank!").trim(),
-					body("provider_token").notEmpty().withMessage("Provider access token can't be blank!").trim(),
+					body("providerId").notEmpty().withMessage("Provider id can't be blank!").trim(),
+					body("providerToken").notEmpty().withMessage("Provider access token can't be blank!").trim(),
 					body("picture").optional(),
 				];
 			case "refresh-token":
-				return [body("refresh_token").notEmpty().withMessage("You must be supply a refresh token!")];
+				return [body("refreshToken").notEmpty().withMessage("You must be supply a refresh token!")];
 			case "forgot-password":
 				return [
 					body("email")
@@ -122,7 +122,7 @@ const AuthController = {
 						.withMessage(
 							"Password must include one lowercase character, one uppercase character, a number, and a special character."
 						),
-					body("password_confirmation")
+					body("passwordConfirmation")
 						.notEmpty()
 						.withMessage("Confirm password cannot be blank!")
 						.custom(
@@ -400,7 +400,7 @@ const AuthController = {
 
 		if (req.isAuthenticated()) {
 			const [existsUserError, existsUser] = await to(
-				User.findOne({ [req.params.provider]: req.body.provider_id })
+				User.findOne({ [req.params.provider]: req.body.providerId })
 			);
 			if (existsUserError) return next(existsUserError);
 			if (existsUser) {
@@ -417,7 +417,7 @@ const AuthController = {
 			if (!user) return next();
 
 			user = Object.assign(user, {
-				[req.params.provider]: req.body.provider_id,
+				[req.params.provider]: req.body.providerId,
 				...(req?.body?.name ? { name: req.body.name } : {}),
 				...(req?.body?.picture ? { picture: req.body.picture } : {}),
 				verified: true,
@@ -438,7 +438,7 @@ const AuthController = {
 				[newSocialProviderTokenError] = await to(
 					Token.create({
 						user: user._id,
-						token: req.body.provider_token,
+						token: req.body.providerToken,
 						kind: vars.tokenTypes[req.params.provider as keyof typeof vars.tokenTypes],
 					})
 				);
@@ -449,7 +449,7 @@ const AuthController = {
 							user: user._id,
 							kind: vars.tokenTypes[req.params.provider as keyof typeof vars.tokenTypes],
 						},
-						{ $set: { token: req.body.provider_token } }
+						{ $set: { token: req.body.providerToken } }
 					)
 				);
 			}
@@ -458,12 +458,12 @@ const AuthController = {
 			const [saveError] = await to(user.save());
 			if (saveError) return next(saveError);
 
-			const access_token = jsonwebtoken.sign(
+			const accessToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.accessTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 			);
-			const refresh_token = jsonwebtoken.sign(
+			const refreshToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.refreshTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -472,7 +472,7 @@ const AuthController = {
 			const [newRefreshTokenError] = await to(
 				Token.create({
 					user: user._id,
-					token: refresh_token,
+					token: refreshToken,
 					kind: vars.tokenTypes.jwt,
 					expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 				})
@@ -486,9 +486,9 @@ const AuthController = {
 					entities: {
 						data: {
 							user: { ...user.toJSON() },
-							access_token,
-							refresh_token,
-							token_type: vars.auth.strategies.jwt.tokenType,
+							accessToken,
+							refreshToken,
+							tokenType: vars.auth.strategies.jwt.tokenType,
 						},
 					},
 					flashes: req.flash(),
@@ -496,7 +496,7 @@ const AuthController = {
 			);
 		}
 
-		const [existsUserError, existsUser] = await to(User.findOne({ [req.params.provider]: req.body.provider_id }));
+		const [existsUserError, existsUser] = await to(User.findOne({ [req.params.provider]: req.body.providerId }));
 		if (existsUserError) return next(existsUserError);
 		if (existsUser) {
 			const [updatedUserError] = await to(
@@ -508,12 +508,12 @@ const AuthController = {
 			if (userError) return next(userError);
 			if (!user) return next();
 
-			const access_token = jsonwebtoken.sign(
+			const accessToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.accessTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 			);
-			const refresh_token = jsonwebtoken.sign(
+			const refreshToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.refreshTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -530,7 +530,7 @@ const AuthController = {
 				[newRefreshTokenError] = await to(
 					Token.create({
 						user: user._id,
-						token: refresh_token,
+						token: refreshToken,
 						kind: vars.tokenTypes.jwt,
 						expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 					})
@@ -541,7 +541,7 @@ const AuthController = {
 						{ user: user._id, kind: vars.tokenTypes.jwt },
 						{
 							$set: {
-								token: refresh_token,
+								token: refreshToken,
 								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
@@ -559,9 +559,9 @@ const AuthController = {
 					entities: {
 						data: {
 							user: { ...user.toJSON(), active: true },
-							access_token,
-							refresh_token,
-							token_type: vars.auth.strategies.jwt.tokenType,
+							accessToken,
+							refreshToken,
+							tokenType: vars.auth.strategies.jwt.tokenType,
 						},
 					},
 					flashes: req.flash(),
@@ -584,7 +584,7 @@ const AuthController = {
 				email: req.body.email,
 				name: req.body.name,
 				...(req.body.picture && { picture: req.body.picture }),
-				[req.params.provider]: req.body.provider_id,
+				[req.params.provider]: req.body.providerId,
 				active: true,
 				verified: true,
 			})
@@ -594,18 +594,18 @@ const AuthController = {
 		const [newSocialProviderTokenError] = await to(
 			Token.create({
 				user: newUser._id,
-				token: req.body.provider_token,
+				token: req.body.providerToken,
 				kind: vars.tokenTypes[req.params.provider as keyof typeof vars.tokenTypes],
 			})
 		);
 		if (newSocialProviderTokenError) return next(newSocialProviderTokenError);
 
-		const access_token = jsonwebtoken.sign(
+		const accessToken = jsonwebtoken.sign(
 			{ sub: newUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
 			vars.auth.strategies.jwt.accessTokenSecret,
 			{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 		);
-		const refresh_token = jsonwebtoken.sign(
+		const refreshToken = jsonwebtoken.sign(
 			{ sub: newUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
 			vars.auth.strategies.jwt.refreshTokenSecret,
 			{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -614,7 +614,7 @@ const AuthController = {
 		const [newRefreshTokenError] = await to(
 			Token.create({
 				user: newUser._id,
-				token: refresh_token,
+				token: refreshToken,
 				kind: vars.tokenTypes.jwt,
 				expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 			})
@@ -628,9 +628,9 @@ const AuthController = {
 				entities: {
 					data: {
 						user: { ...newUser.toJSON() },
-						access_token,
-						refresh_token,
-						token_type: vars.auth.strategies.jwt.tokenType,
+						accessToken,
+						refreshToken,
+						tokenType: vars.auth.strategies.jwt.tokenType,
 					},
 				},
 				flashes: req.flash(),
@@ -712,12 +712,12 @@ const AuthController = {
 		if (newEmailError) return next(newEmailError);
 
 		req.flash("success", "Account Registered Successfully, Check your E-mail address to verify your account.");
-		const access_token = jsonwebtoken.sign(
+		const accessToken = jsonwebtoken.sign(
 			{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
 			vars.auth.strategies.jwt.accessTokenSecret,
 			{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 		);
-		const refresh_token = jsonwebtoken.sign(
+		const refreshToken = jsonwebtoken.sign(
 			{ sub: createdUser._id.toString(), iat: Math.floor(Date.now() / 1000) },
 			vars.auth.strategies.jwt.refreshTokenSecret,
 			{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -726,7 +726,7 @@ const AuthController = {
 		const [newRefreshTokenError] = await to(
 			Token.create({
 				user: createdUser._id,
-				token: refresh_token,
+				token: refreshToken,
 				kind: vars.tokenTypes.jwt,
 				expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 			})
@@ -739,9 +739,9 @@ const AuthController = {
 				entities: {
 					data: {
 						user: { ...(createdUser?.toJSON() || {}) },
-						access_token,
-						refresh_token,
-						token_type: vars.auth.strategies.jwt.tokenType,
+						accessToken,
+						refreshToken,
+						tokenType: vars.auth.strategies.jwt.tokenType,
 					},
 				},
 				flashes: req.flash(),
@@ -772,12 +772,12 @@ const AuthController = {
 			);
 			if (updateUserError) return next(updateUserError);
 
-			const access_token = jsonwebtoken.sign(
+			const accessToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.accessTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 			);
-			const refresh_token = jsonwebtoken.sign(
+			const refreshToken = jsonwebtoken.sign(
 				{ sub: user._id.toString(), iat: Math.floor(Date.now() / 1000) },
 				vars.auth.strategies.jwt.refreshTokenSecret,
 				{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -793,7 +793,7 @@ const AuthController = {
 				[newRefreshTokenError] = await to(
 					Token.create({
 						user: user._id,
-						token: refresh_token,
+						token: refreshToken,
 						kind: vars.tokenTypes.jwt,
 						expireAt: Date.now() + 1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
 					})
@@ -804,7 +804,7 @@ const AuthController = {
 						{ user: user._id, kind: vars.tokenTypes.jwt },
 						{
 							$set: {
-								token: refresh_token,
+								token: refreshToken,
 								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
@@ -822,9 +822,9 @@ const AuthController = {
 					entities: {
 						data: {
 							user: { ...(user.toJSON() || {}), active: true },
-							access_token,
-							refresh_token,
-							token_type: vars.auth.strategies.jwt.tokenType,
+							accessToken,
+							refreshToken,
+							tokenType: vars.auth.strategies.jwt.tokenType,
 						},
 					},
 					flashes: req.flash(),
@@ -858,7 +858,7 @@ const AuthController = {
 			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const { refresh_token: refreshToken } = req.body as { refresh_token: string };
+		const { refreshToken: refreshToken } = req.body as { refreshToken: string };
 		const [userRefreshTokenError, userRefreshToken] = await to(
 			Token.findOne({ token: refreshToken, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } })
 		);
@@ -876,12 +876,12 @@ const AuthController = {
 			async (error: VerifyErrors | null, payload: JwtPayload | string | undefined) => {
 				if (error) return next(formatResponseObject({ status: httpStatus.FORBIDDEN, error }));
 				const _id = payload?.sub || "";
-				const access_token = jsonwebtoken.sign(
+				const accessToken = jsonwebtoken.sign(
 					{ sub: _id.toString(), iat: Math.floor(Date.now() / 1000) },
 					vars.auth.strategies.jwt.accessTokenSecret,
 					{ expiresIn: `${vars.auth.strategies.jwt.accessTokenExpiresInMinutes}m` }
 				);
-				const refresh_token = jsonwebtoken.sign(
+				const refreshToken = jsonwebtoken.sign(
 					{ sub: _id.toString(), iat: Math.floor(Date.now() / 1000) },
 					vars.auth.strategies.jwt.refreshTokenSecret,
 					{ expiresIn: `${vars.auth.strategies.jwt.refreshTokenExpiresInDays}d` }
@@ -892,7 +892,7 @@ const AuthController = {
 						{ token: refreshToken, kind: vars.tokenTypes.jwt, expireAt: { $gt: Date.now() } },
 						{
 							$set: {
-								token: refresh_token,
+								token: refreshToken,
 								expireAt:
 									Date.now() +
 									1000 * 60 * 60 * 24 * vars.auth.strategies.jwt.refreshTokenExpiresInDays,
@@ -906,7 +906,7 @@ const AuthController = {
 					formatResponseObject({
 						status: httpStatus.OK,
 						entities: {
-							data: { access_token, refresh_token, token_type: vars.auth.strategies.jwt.tokenType },
+							data: { accessToken, refreshToken, tokenType: vars.auth.strategies.jwt.tokenType },
 						},
 					})
 				);

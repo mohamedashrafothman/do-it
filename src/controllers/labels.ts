@@ -45,8 +45,8 @@ const LabelController = {
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
 			{ name: "Name Z-A", value: { name: -1 } },
-			{ name: "Created Date Ascending", value: { created_at: 1 } },
-			{ name: "Created Date Descending", value: { created_at: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
 		];
 
 		const [paginatedLabelsError, paginatedLabels] = await to(

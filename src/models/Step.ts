@@ -13,7 +13,7 @@ const StepSchema = new Schema<IStepDocument, object, IStepDocument>(
 	{
 		user: { type: Schema.Types.ObjectId, required: true, ref: "User", autopopulate: true },
 		title: { type: String, required: true, trim: true },
-		dueDate: { type: Date },
+		dueDate: { type: Date, required: true, default: Date.now },
 		completed: { type: Boolean, default: false },
 		order: { type: Number, required: true },
 		totalRepeatCount: { type: Number, default: 1 },

@@ -21,6 +21,12 @@ const TaskController = {
 						.withMessage("Steps must be in array format!"),
 					body("steps.*.title").notEmpty().withMessage("You must supply a step title!").trim().escape(),
 					body("steps.*.order").notEmpty().withMessage("You must supply a step order in list!"),
+					body("steps.*.dueDate")
+						.notEmpty()
+						.withMessage("You must supply a step due date in list!")
+						.isISO8601()
+						.toDate()
+						.withMessage("Invalid due date format!"),
 				];
 			default:
 				return [];
@@ -64,8 +70,8 @@ const TaskController = {
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
 			{ name: "Name Z-A", value: { name: -1 } },
-			{ name: "Created Date Ascending", value: { created_at: 1 } },
-			{ name: "Created Date Descending", value: { created_at: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
 		];
 
 		const [paginatedTasksError, paginatedTasks] = await to(
