@@ -1,11 +1,13 @@
 import chalk from "chalk";
 import mongoose from "mongoose";
+import mongooseAutopopulate from "mongoose-autopopulate";
 import mongoosePagination from "mongoose-paginate-v2";
 import vars from "../utils/vars";
 
 mongoose.Promise = global.Promise;
 mongoose.connect(vars.db.url, {});
 mongoose.plugin(mongoosePagination);
+mongoose.plugin(mongooseAutopopulate);
 mongoose.set("debug", !vars.isProduction);
 mongoose.connection
 	.once("open", () => console.log(chalk.blue("✅  Connected to the database")))

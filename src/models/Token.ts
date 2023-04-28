@@ -1,5 +1,4 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import mongooseAutopopulate from "mongoose-autopopulate";
 import IToken from "../interfaces/Token.interface";
 import vars from "../utils/vars";
 
@@ -19,8 +18,6 @@ const TokenSchema = new Schema<ITokenDocument, object, ITokenDocument>(
 	},
 	{ timestamps: true }
 );
-
-TokenSchema.plugin(mongooseAutopopulate);
 
 // modal definition
 const TokenModal = model<ITokenDocument, PaginateModel<ITokenDocument> & ITokenModel>("Token", TokenSchema);

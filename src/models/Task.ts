@@ -1,5 +1,4 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import mongooseAutopopulate from "mongoose-autopopulate";
 import MongooseDelete, { SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import ITask from "../interfaces/Task.interface";
@@ -25,7 +24,6 @@ const TaskSchema = new Schema<ITaskDocument, object, ITaskDocument>(
 
 // schema plugins
 TaskSchema.plugin(slug);
-TaskSchema.plugin(mongooseAutopopulate);
 TaskSchema.plugin(MongooseDelete, { deletedAt: true, deletedBy: true, overrideMethods: true });
 
 // modal definition
