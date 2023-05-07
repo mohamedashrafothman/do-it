@@ -1,8 +1,9 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import ISession from "../interfaces/Session.interface";
 
 // adding schema methods here
-export interface ISessionDocument extends ISession, Document {}
+export interface ISessionDocument extends SoftDeleteInterface, ISession, Document {}
 
 // adding statics methods here
 export type ISessionModel = Model<ISessionDocument>;
@@ -11,6 +12,9 @@ export type ISessionModel = Model<ISessionDocument>;
 const SessionSchema = new Schema<ISessionDocument, object, ISessionDocument>({}, { timestamps: true });
 
 // modal definition
-const SessionModal = model<ISessionDocument, PaginateModel<ISessionDocument> & ISessionModel>("Session", SessionSchema);
+const SessionModal = model<
+	ISessionDocument,
+	PaginateModel<ISessionDocument> & SoftDeleteModel<ISessionDocument> & ISessionModel
+>("Session", SessionSchema);
 
 export default SessionModal;

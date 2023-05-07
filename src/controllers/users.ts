@@ -3,7 +3,11 @@ import { NextFunction, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
 import httpStatus from "http-status";
 import Email from "../models/Email";
+import Label from "../models/Label";
+import List from "../models/List";
 import Session from "../models/Session";
+import Step from "../models/Step";
+import Task from "../models/Task";
 import Token from "../models/Token";
 import User from "../models/User";
 import emailService from "../services/email";
@@ -238,34 +242,59 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		const [deleteUserError] = await to(User.deleteById(user?._id));
+		const [deleteUserError] = await to(User.deleteById(user?._id, req?.user?.id));
 		if (deleteUserError) return next(deleteUserError);
 
-		const [deleteSessionsError] = await to(Session.deleteMany({ "session.passport.user._id": user?._id }));
+		const [deleteSessionsError] = await to(Session.delete({ "session.passport.user._id": user?._id }));
 		if (deleteSessionsError) return next(deleteSessionsError);
 
-		const [deleteTokenError] = await to(Token.deleteMany({ user: user?._id }));
+		const [deleteTokenError] = await to(Token.delete({ user: user?._id }));
 		if (deleteTokenError) return next(deleteTokenError);
+
+		const [deleteLabelError] = await to(Label.delete({ user: user?._id }));
+		if (deleteLabelError) return next(deleteLabelError);
+
+		const [deleteListError] = await to(List.delete({ user: user?._id }));
+		if (deleteListError) return next(deleteListError);
+
+		const [deleteTaskError] = await to(Task.delete({ user: user?._id }));
+		if (deleteTaskError) return next(deleteTaskError);
+
+		const [deleteStepError] = await to(Step.delete({ user: user?._id }));
+		if (deleteStepError) return next(deleteStepError);
 
 		req.flash("success", "Successfully Deleted.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleUser: async (req: Request, res: Response, next: NextFunction) => {
 		const { user: userIdentifier } = req.params || {};
+		const singleUserQuery = {
+			$or: [
+				{ slug: userIdentifier },
+				...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
+			],
+		};
 
-		const [userError, user] = await to(
-			User.findOneWithDeleted({
-				$or: [
-					{ slug: userIdentifier },
-					...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
-				],
-			})
-		);
+		const [userError, user] = await to(User.findOneWithDeleted(singleUserQuery));
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		const [restoreUserError] = await to(User.restore());
+		const [restoreUserError] = await to(User.restore(singleUserQuery));
 		if (restoreUserError) return next(restoreUserError);
+
+		const restoreQuery = { user: user?._id, deletedAt: { $gt: user?.deletedAt }, deletedBy: user?.deletedBy };
+
+		const [restoreLabelError] = await to(Label.restore(restoreQuery));
+		if (restoreLabelError) return next(restoreLabelError);
+
+		const [restoreListError] = await to(List.restore(restoreQuery));
+		if (restoreListError) return next(restoreListError);
+
+		const [restoreTaskError] = await to(Task.restore(restoreQuery));
+		if (restoreTaskError) return next(restoreTaskError);
+
+		const [restoreStepError] = await to(Step.restore(restoreQuery));
+		if (restoreStepError) return next(restoreStepError);
 
 		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));

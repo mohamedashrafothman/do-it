@@ -1,10 +1,10 @@
 import { AggregatePaginateModel, Document, Model, PaginateModel, Schema, model } from "mongoose";
-import { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import ITask from "../interfaces/Task.interface";
 
 // adding schema methods here
-export interface ITaskDocument extends ITask, Document {}
+export interface ITaskDocument extends SoftDeleteInterface, ITask, Document {}
 
 // adding statics methods here
 export type ITaskModel = Model<ITaskDocument>;

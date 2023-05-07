@@ -1,10 +1,10 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import IList from "../interfaces/List.interface";
 
 // adding schema methods here
-export interface IListDocument extends IList, Document {}
+export interface IListDocument extends SoftDeleteInterface, IList, Document {}
 
 // adding statics methods here
 export type IListModel = Model<IListDocument>;

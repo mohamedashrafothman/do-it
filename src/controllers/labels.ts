@@ -143,7 +143,7 @@ const LabelController = {
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		const [deleteLabelError] = await to(Label.deleteById(label?._id));
+		const [deleteLabelError] = await to(Label.deleteById(label?._id, req?.user?.id));
 		if (deleteLabelError) return next(deleteLabelError);
 
 		req.flash("success", "Successfully Deleted.");
@@ -151,20 +151,19 @@ const LabelController = {
 	},
 	restoreSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
 		const { label: labelIdentifier } = req.params || {};
+		const singleLabelQuery = {
+			user: req?.user?._id || "",
+			$or: [
+				{ slug: labelIdentifier },
+				...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
+			],
+		};
 
-		const [labelError, label] = await to(
-			Label.findOneWithDeleted({
-				user: req?.user?._id || "",
-				$or: [
-					{ slug: labelIdentifier },
-					...(labelIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: labelIdentifier }] : []),
-				],
-			})
-		);
+		const [labelError, label] = await to(Label.findOneWithDeleted(singleLabelQuery));
 		if (labelError) return next(labelError);
 		if (!label) return next();
 
-		const [restoreLabelError] = await to(Label.restore());
+		const [restoreLabelError] = await to(Label.restore(singleLabelQuery));
 		if (restoreLabelError) return next(restoreLabelError);
 
 		req.flash("success", "Successfully Restored.");

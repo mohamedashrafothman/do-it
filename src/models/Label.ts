@@ -1,10 +1,10 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import ILabel from "../interfaces/Label.interface";
 
 // adding schema methods here
-export interface ILabelDocument extends ILabel, Document {}
+export interface ILabelDocument extends SoftDeleteInterface, ILabel, Document {}
 
 // adding statics methods here
 export type ILabelModel = Model<ILabelDocument>;

@@ -1,9 +1,9 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import IStep from "../interfaces/Step.interface";
 
 // adding schema methods here
-export interface IStepDocument extends IStep, Document {}
+export interface IStepDocument extends SoftDeleteInterface, IStep, Document {}
 
 // adding statics methods here
 export type IStepModel = Model<IStepDocument>;

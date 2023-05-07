@@ -2,14 +2,14 @@ import to from "await-to-js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import isEmail from "validator/lib/isEmail.js";
 import IUser from "../interfaces/User.interface";
 import vars from "../utils/vars";
 
 // adding schema methods here
-export interface IUserDocument extends IUser, Document {
+export interface IUserDocument extends SoftDeleteInterface, IUser, Document {
 	comparePassword: (
 		password: string,
 		next: (err?: Error | null | boolean, check?: boolean | null | undefined) => any

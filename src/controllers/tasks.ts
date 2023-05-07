@@ -173,7 +173,7 @@ const TaskController = {
 		if (taskError) return next(taskError);
 		if (!task) return next();
 
-		const [deleteTaskError] = await to(Task.deleteById(task?._id));
+		const [deleteTaskError] = await to(Task.deleteById(task?._id, req?.user?.id));
 		if (deleteTaskError) return next(deleteTaskError);
 
 		req.flash("success", "Successfully Deleted.");
@@ -181,20 +181,19 @@ const TaskController = {
 	},
 	restoreSingleTask: async (req: Request, res: Response, next: NextFunction) => {
 		const { task: taskIdentifier } = req.params || {};
+		const singleTaskQuery = {
+			user: req?.user?._id || "",
+			$or: [
+				{ slug: taskIdentifier },
+				...(taskIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: taskIdentifier }] : []),
+			],
+		};
 
-		const [taskError, task] = await to(
-			Task.findOneWithDeleted({
-				user: req?.user?._id || "",
-				$or: [
-					{ slug: taskIdentifier },
-					...(taskIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: taskIdentifier }] : []),
-				],
-			})
-		);
+		const [taskError, task] = await to(Task.findOneWithDeleted(singleTaskQuery));
 		if (taskError) return next(taskError);
 		if (!task) return next();
 
-		const [restoreTaskError] = await to(Task.restore());
+		const [restoreTaskError] = await to(Task.restore(singleTaskQuery));
 		if (restoreTaskError) return next(restoreTaskError);
 
 		req.flash("success", "Successfully Restored.");
