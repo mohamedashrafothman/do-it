@@ -1,7 +1,8 @@
 import to from "await-to-js";
 import { NextFunction, Request, Response } from "express";
-import { body, validationResult } from "express-validator";
+import { body, param, validationResult } from "express-validator";
 import httpStatus from "http-status";
+import moment from "moment";
 import Step from "../models/Step";
 import Task from "../models/Task";
 import { formatResponseObject } from "../utils/helpers";
@@ -27,6 +28,12 @@ const TaskController = {
 						.isISO8601()
 						.toDate()
 						.withMessage("Invalid due date format!"),
+				];
+			case "due-date":
+				return [
+					param("date")
+						.isIn(["someday", "today", "upcoming"])
+						.withMessage("date param must contain in those values (someday, today, upcoming)"),
 				];
 			default:
 				return [];
@@ -65,7 +72,7 @@ const TaskController = {
 		);
 	},
 	getTasks: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, ...query } = req.query;
+		const { q, ...query } = req.query || {};
 		const querySearchFields = ["name"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
@@ -83,6 +90,7 @@ const TaskController = {
 						})),
 					}) ||
 						{}),
+					deleted: { $ne: true },
 					user: req?.user?._id || "",
 				},
 				{ ...(query || {}) }
@@ -100,7 +108,7 @@ const TaskController = {
 		);
 	},
 	getSingleTask: async (req: Request, res: Response, next: NextFunction) => {
-		const { task: taskIdentifier } = req.params;
+		const { task: taskIdentifier } = req.params || {};
 		const [taskError, task] = await to(
 			Task.findOne({
 				user: req?.user?._id || "",
@@ -122,7 +130,7 @@ const TaskController = {
 			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const { task: taskIdentifier } = req.params;
+		const { task: taskIdentifier } = req.params || {};
 
 		// eslint-disable-next-line prefer-const
 		let [taskError, task] = await to(
@@ -151,7 +159,7 @@ const TaskController = {
 		);
 	},
 	deleteSingleTask: async (req: Request, res: Response, next: NextFunction) => {
-		const { task: taskIdentifier } = req.params;
+		const { task: taskIdentifier } = req.params || {};
 
 		const [taskError, task] = await to(
 			Task.findOne({
@@ -172,7 +180,7 @@ const TaskController = {
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleTask: async (req: Request, res: Response, next: NextFunction) => {
-		const { task: taskIdentifier } = req.params;
+		const { task: taskIdentifier } = req.params || {};
 
 		const [taskError, task] = await to(
 			Task.findOneWithDeleted({
@@ -191,6 +199,110 @@ const TaskController = {
 
 		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	getDeletedTasks: async (req: Request, res: Response, next: NextFunction) => {
+		const { q, ...query } = req.query || {};
+		const querySearchFields = ["name"];
+		const sort = [
+			{ name: "Name A-Z", value: { name: 1 } },
+			{ name: "Name Z-A", value: { name: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
+		];
+
+		const [paginatedTasksError, paginatedTasks] = await to(
+			Task.paginate(
+				{
+					...((q && {
+						$or: querySearchFields.map((item) => ({
+							[item]: { $regex: String(q).toLowerCase() || "", $options: "i" },
+						})),
+					}) ||
+						{}),
+					deleted: true,
+					user: req?.user?._id || "",
+				},
+				{ ...(query || {}) }
+			)
+		);
+		if (paginatedTasksError) return next(paginatedTasksError);
+
+		const { docs, ...pagination } = paginatedTasks;
+
+		return res.status(httpStatus.OK).json(
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
+			})
+		);
+	},
+	getTasksByStepsDueDate: async (req: Request, res: Response, next: NextFunction) => {
+		const validationErrors = validationResult(req);
+		if (!validationErrors.isEmpty()) {
+			req.flash("danger", JSON.parse(JSON.stringify(validationErrors.array({ onlyFirstError: true }))));
+			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
+		}
+
+		const { q, ...query } = req.query || {};
+		const { date } = req.params || {};
+		const querySearchFields = ["name"];
+		const sort = [
+			{ name: "Name A-Z", value: { name: 1 } },
+			{ name: "Name Z-A", value: { name: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
+		];
+		const today = moment().startOf("day");
+		const tomorrow = moment(today).endOf("day");
+
+		const [paginatedTasksError, paginatedTasks] = await to(
+			Task.aggregatePaginate(
+				Task.aggregate([
+					{ $lookup: { from: "steps", localField: "steps", foreignField: "_id", as: "steps" } },
+					{
+						$match: {
+							...((q && {
+								$or: querySearchFields.map((item) => ({
+									[item]: { $regex: String(q).toLowerCase() || "", $options: "i" },
+								})),
+							}) ||
+								{}),
+							deleted: { $ne: true },
+							user: req?.user?._id || "",
+							steps: {
+								$elemMatch: {
+									dueDate: {
+										...(date === "someday"
+											? { $lte: today.toDate() }
+											: date === "today"
+											? { $lte: tomorrow.toDate(), $gte: today.toDate() }
+											: date === "upcoming"
+											? { $gte: tomorrow.toDate() }
+											: {}),
+									},
+								},
+							},
+						},
+					},
+					{ $lookup: { from: "users", localField: "user", foreignField: "_id", as: "user" } },
+					{ $unwind: "$user" },
+					{ $lookup: { from: "lists", localField: "list", foreignField: "_id", as: "list" } },
+					{ $unwind: "$list" },
+					{ $lookup: { from: "labels", localField: "labels", foreignField: "_id", as: "labels" } },
+				]),
+				{ ...(query || {}) }
+			)
+		);
+		if (paginatedTasksError) return next(paginatedTasksError);
+
+		const { docs, ...pagination } = paginatedTasks;
+
+		return res.status(httpStatus.OK).json(
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
+			})
+		);
 	},
 };
 

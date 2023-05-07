@@ -40,7 +40,7 @@ const ListController = {
 		);
 	},
 	getLists: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, ...query } = req.query;
+		const { q, ...query } = req.query || {};
 		const querySearchFields = ["name"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
@@ -58,6 +58,7 @@ const ListController = {
 						})),
 					}) ||
 						{}),
+					deleted: { $ne: true },
 					user: req?.user?._id || "",
 				},
 				{ ...query }
@@ -75,7 +76,7 @@ const ListController = {
 		);
 	},
 	getSingleList: async (req: Request, res: Response, next: NextFunction) => {
-		const { list: listIdentifier } = req.params;
+		const { list: listIdentifier } = req.params || {};
 		const [listError, list] = await to(
 			List.findOne({
 				user: req?.user?._id || "",
@@ -97,7 +98,7 @@ const ListController = {
 			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const { list: listIdentifier } = req.params;
+		const { list: listIdentifier } = req.params || {};
 
 		// eslint-disable-next-line prefer-const
 		let [listError, list] = await to(
@@ -126,7 +127,7 @@ const ListController = {
 		);
 	},
 	deleteSingleList: async (req: Request, res: Response, next: NextFunction) => {
-		const { list: listIdentifier } = req.params;
+		const { list: listIdentifier } = req.params || {};
 
 		const [listError, list] = await to(
 			List.findOne({
@@ -147,7 +148,7 @@ const ListController = {
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleList: async (req: Request, res: Response, next: NextFunction) => {
-		const { list: listIdentifier } = req.params;
+		const { list: listIdentifier } = req.params || {};
 
 		const [listError, list] = await to(
 			List.findOneWithDeleted({
@@ -166,6 +167,42 @@ const ListController = {
 
 		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	getDeletedLists: async (req: Request, res: Response, next: NextFunction) => {
+		const { q, ...query } = req.query || {};
+		const querySearchFields = ["name"];
+		const sort = [
+			{ name: "Name A-Z", value: { name: 1 } },
+			{ name: "Name Z-A", value: { name: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
+		];
+
+		const [paginatedListsError, paginatedLists] = await to(
+			List.paginate(
+				{
+					...((q && {
+						$or: querySearchFields.map((item) => ({
+							[item]: { $regex: String(q).toLowerCase() || "", $options: "i" },
+						})),
+					}) ||
+						{}),
+					deleted: true,
+					user: req?.user?._id || "",
+				},
+				{ ...query }
+			)
+		);
+		if (paginatedListsError) return next(paginatedListsError);
+
+		const { docs, ...pagination } = paginatedLists;
+
+		return res.status(httpStatus.OK).json(
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
+			})
+		);
 	},
 };
 

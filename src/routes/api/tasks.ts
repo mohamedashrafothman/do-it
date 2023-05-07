@@ -11,6 +11,14 @@ router
 	.post(tasksController.validator("store"), tasksController.postSingleTask)
 	.get(tasksController.getTasks);
 router
+	.route("/deleted")
+	.all(allowMethods(["get"]))
+	.get(tasksController.getDeletedTasks);
+router
+	.route("/due-date/:date")
+	.all(allowMethods(["get"]))
+	.get(tasksController.validator("due-date"), tasksController.getTasksByStepsDueDate);
+router
 	.route("/:task")
 	.all(allowMethods(["get", "patch", "delete"]))
 	.get(tasksController.getSingleTask)

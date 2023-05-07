@@ -40,7 +40,7 @@ const LabelController = {
 		);
 	},
 	getLabels: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, ...query } = req.query;
+		const { q, ...query } = req.query || {};
 		const querySearchFields = ["name"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
@@ -58,6 +58,7 @@ const LabelController = {
 						})),
 					}) ||
 						{}),
+					deleted: { $ne: true },
 					user: req?.user?._id || "",
 				},
 				{ ...query }
@@ -75,7 +76,7 @@ const LabelController = {
 		);
 	},
 	getSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
-		const { label: labelIdentifier } = req.params;
+		const { label: labelIdentifier } = req.params || {};
 		const [labelError, label] = await to(
 			Label.findOne({
 				user: req?.user?._id || "",
@@ -99,7 +100,7 @@ const LabelController = {
 			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const { label: labelIdentifier } = req.params;
+		const { label: labelIdentifier } = req.params || {};
 
 		// eslint-disable-next-line prefer-const
 		let [labelError, label] = await to(
@@ -128,7 +129,7 @@ const LabelController = {
 		);
 	},
 	deleteSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
-		const { label: labelIdentifier } = req.params;
+		const { label: labelIdentifier } = req.params || {};
 
 		const [labelError, label] = await to(
 			Label.findOne({
@@ -149,7 +150,7 @@ const LabelController = {
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
 	},
 	restoreSingleLabel: async (req: Request, res: Response, next: NextFunction) => {
-		const { label: labelIdentifier } = req.params;
+		const { label: labelIdentifier } = req.params || {};
 
 		const [labelError, label] = await to(
 			Label.findOneWithDeleted({
@@ -168,6 +169,42 @@ const LabelController = {
 
 		req.flash("success", "Successfully Restored.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	getDeletedLabels: async (req: Request, res: Response, next: NextFunction) => {
+		const { q, ...query } = req.query || {};
+		const querySearchFields = ["name"];
+		const sort = [
+			{ name: "Name A-Z", value: { name: 1 } },
+			{ name: "Name Z-A", value: { name: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
+		];
+
+		const [paginatedLabelsError, paginatedLabels] = await to(
+			Label.paginate(
+				{
+					...((q && {
+						$or: querySearchFields.map((item) => ({
+							[item]: { $regex: String(q).toLowerCase() || "", $options: "i" },
+						})),
+					}) ||
+						{}),
+					deleted: true,
+					user: req?.user?._id || "",
+				},
+				{ ...query }
+			)
+		);
+		if (paginatedLabelsError) return next(paginatedLabelsError);
+
+		const { docs, ...pagination } = paginatedLabels;
+
+		return res.status(httpStatus.OK).json(
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
+			})
+		);
 	},
 };
 

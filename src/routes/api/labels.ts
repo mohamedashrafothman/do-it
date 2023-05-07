@@ -11,6 +11,10 @@ router
 	.post(labelsController.validator("store"), labelsController.postSingleLabel)
 	.get(labelsController.getLabels);
 router
+	.route("/deleted")
+	.all(allowMethods(["get"]))
+	.get(labelsController.getDeletedLabels);
+router
 	.route("/:label")
 	.all(allowMethods(["get", "patch", "delete"]))
 	.get(labelsController.getSingleLabel)

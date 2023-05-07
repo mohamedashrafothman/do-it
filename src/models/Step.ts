@@ -1,5 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import MongooseDelete, { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteModel } from "mongoose-delete";
 import IStep from "../interfaces/Step.interface";
 
 // adding schema methods here
@@ -21,9 +21,6 @@ const StepSchema = new Schema<IStepDocument, object, IStepDocument>(
 	},
 	{ timestamps: true }
 );
-
-// schema plugins
-StepSchema.plugin(MongooseDelete, { deletedAt: true, deletedBy: true, overrideMethods: true });
 
 // modal definition
 const StepModal = model<IStepDocument, PaginateModel<IStepDocument> & SoftDeleteModel<IStepDocument> & IStepModel>(

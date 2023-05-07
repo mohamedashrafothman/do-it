@@ -1,5 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import MongooseDelete, { SoftDeleteModel } from "mongoose-delete";
+import { SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import IList from "../interfaces/List.interface";
 
@@ -22,7 +22,6 @@ const ListSchema = new Schema<IListDocument, object, IListDocument>(
 
 // schema plugins
 ListSchema.plugin(slug);
-ListSchema.plugin(MongooseDelete, { deletedAt: true, deletedBy: true, overrideMethods: true });
 
 // modal definition
 const ListModal = model<IListDocument, PaginateModel<IListDocument> & SoftDeleteModel<IListDocument> & IListModel>(

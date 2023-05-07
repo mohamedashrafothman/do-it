@@ -63,8 +63,8 @@ const UsersController = {
 		}
 	},
 	getUsers: async (req: Request, res: Response, next: NextFunction) => {
-		const { q, status: verified, ...query } = req.query;
-		const querySearchFields = ["name", "email", "role"];
+		const { q, status: verified, ...query } = req.query || {};
+		const querySearchFields = ["name", "email"];
 		const sort = [
 			{ name: "Name A-Z", value: { name: 1 } },
 			{ name: "Name Z-A", value: { name: -1 } },
@@ -82,6 +82,7 @@ const UsersController = {
 					}) ||
 						{}),
 					...((verified && verified !== "all" && { verified }) || {}),
+					deleted: { $ne: true },
 					_id: { $ne: req?.user?._id || "" },
 				},
 				{ ...query }
@@ -99,7 +100,7 @@ const UsersController = {
 		);
 	},
 	getSingleUser: async (req: Request, res: Response, next: NextFunction) => {
-		const { user: userIdentifier } = req.params;
+		const { user: userIdentifier } = req.params || {};
 		const [userError, user] = await to(
 			User.findOne({
 				$or: [
@@ -128,7 +129,7 @@ const UsersController = {
 			return next(formatResponseObject({ status: httpStatus.UNPROCESSABLE_ENTITY, flashes: req.flash() }));
 		}
 
-		const { user: userIdentifier } = req.params;
+		const { user: userIdentifier } = req.params || {};
 		const { oldPassword: _oldPassword, passwordConfirmation: _passwordConfirmation, logout, ...reqBody } = req.body;
 		let isPasswordModified;
 		let isEmailModified;
@@ -224,7 +225,7 @@ const UsersController = {
 		);
 	},
 	deleteSingleUser: async (req: Request, res: Response, next: NextFunction) => {
-		const { user: userIdentifier } = req.params;
+		const { user: userIdentifier } = req.params || {};
 
 		const [userError, user] = await to(
 			User.findOne({
@@ -237,7 +238,7 @@ const UsersController = {
 		if (userError) return next(userError);
 		if (!user) return next();
 
-		const [deleteUserError] = await to(user.deleteOne());
+		const [deleteUserError] = await to(User.deleteById(user?._id));
 		if (deleteUserError) return next(deleteUserError);
 
 		const [deleteSessionsError] = await to(Session.deleteMany({ "session.passport.user._id": user?._id }));
@@ -248,6 +249,63 @@ const UsersController = {
 
 		req.flash("success", "Successfully Deleted.");
 		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	restoreSingleUser: async (req: Request, res: Response, next: NextFunction) => {
+		const { user: userIdentifier } = req.params || {};
+
+		const [userError, user] = await to(
+			User.findOneWithDeleted({
+				$or: [
+					{ slug: userIdentifier },
+					...(userIdentifier.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: userIdentifier }] : []),
+				],
+			})
+		);
+		if (userError) return next(userError);
+		if (!user) return next();
+
+		const [restoreUserError] = await to(User.restore());
+		if (restoreUserError) return next(restoreUserError);
+
+		req.flash("success", "Successfully Restored.");
+		res.status(httpStatus.OK).json(formatResponseObject({ status: httpStatus.OK, flashes: req.flash() }));
+	},
+	getDeletedUser: async (req: Request, res: Response, next: NextFunction) => {
+		const { q, status: verified, ...query } = req.query || {};
+		const querySearchFields = ["name", "email"];
+		const sort = [
+			{ name: "Name A-Z", value: { name: 1 } },
+			{ name: "Name Z-A", value: { name: -1 } },
+			{ name: "Created Date Ascending", value: { createdAt: 1 } },
+			{ name: "Created Date Descending", value: { createdAt: -1 } },
+		];
+
+		const [paginatedUsersError, paginatedUsers] = await to(
+			User.paginate(
+				{
+					...((q && {
+						$or: querySearchFields.map((item) => ({
+							[item]: { $regex: String(q).toLowerCase() || "", $options: "i" },
+						})),
+					}) ||
+						{}),
+					...((verified && verified !== "all" && { verified }) || {}),
+					deleted: true,
+					_id: { $ne: req?.user?._id || "" },
+				},
+				{ ...query }
+			)
+		);
+		if (paginatedUsersError) return next(paginatedUsersError);
+
+		const { docs, ...pagination } = paginatedUsers;
+
+		return res.status(httpStatus.OK).json(
+			formatResponseObject({
+				status: httpStatus.OK,
+				entities: { data: [...(docs || [])], meta: { pagination, sort } },
+			})
+		);
 	},
 };
 

@@ -1,12 +1,20 @@
 import chalk from "chalk";
 import mongoose from "mongoose";
+import mongooseAggregatePagination from "mongoose-aggregate-paginate-v2";
 import mongooseAutopopulate from "mongoose-autopopulate";
+import MongooseDelete from "mongoose-delete";
 import mongoosePagination from "mongoose-paginate-v2";
 import vars from "../utils/vars";
 
 mongoose.Promise = global.Promise;
 mongoose.connect(vars.db.url, {});
+mongoose.plugin(MongooseDelete, {
+	deletedAt: true,
+	deletedBy: true,
+	overrideMethods: ["findOne", "findOneAndUpdate", "update", "updateOne", "updateMany", "aggregate"],
+});
 mongoose.plugin(mongoosePagination);
+mongoose.plugin(mongooseAggregatePagination);
 mongoose.plugin(mongooseAutopopulate);
 mongoose.set("debug", !vars.isProduction);
 mongoose.connection

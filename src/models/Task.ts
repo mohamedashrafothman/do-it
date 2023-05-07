@@ -1,5 +1,5 @@
-import { Document, Model, PaginateModel, Schema, model } from "mongoose";
-import MongooseDelete, { SoftDeleteModel } from "mongoose-delete";
+import { AggregatePaginateModel, Document, Model, PaginateModel, Schema, model } from "mongoose";
+import { SoftDeleteModel } from "mongoose-delete";
 import slug from "mongoose-slug-updater";
 import ITask from "../interfaces/Task.interface";
 
@@ -24,12 +24,11 @@ const TaskSchema = new Schema<ITaskDocument, object, ITaskDocument>(
 
 // schema plugins
 TaskSchema.plugin(slug);
-TaskSchema.plugin(MongooseDelete, { deletedAt: true, deletedBy: true, overrideMethods: true });
 
 // modal definition
-const TaskModal = model<ITaskDocument, PaginateModel<ITaskDocument> & SoftDeleteModel<ITaskDocument> & ITaskModel>(
-	"Task",
-	TaskSchema
-);
+const TaskModal = model<
+	ITaskDocument,
+	PaginateModel<ITaskDocument> & AggregatePaginateModel<ITaskDocument> & SoftDeleteModel<ITaskDocument> & ITaskModel
+>("Task", TaskSchema);
 
 export default TaskModal;

@@ -11,6 +11,10 @@ router
 	.post(listsController.validator("store"), listsController.postSingleList)
 	.get(listsController.getLists);
 router
+	.route("/deleted")
+	.all(allowMethods(["get"]))
+	.get(listsController.getDeletedLists);
+router
 	.route("/:list")
 	.all(allowMethods(["get", "patch", "delete"]))
 	.get(listsController.getSingleList)
