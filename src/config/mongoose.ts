@@ -4,6 +4,7 @@ import mongooseAggregatePagination from "mongoose-aggregate-paginate-v2";
 import mongooseAutopopulate from "mongoose-autopopulate";
 import MongooseDelete from "mongoose-delete";
 import mongoosePagination from "mongoose-paginate-v2";
+import slug from "mongoose-slug-updater";
 import vars from "../utils/vars";
 
 mongoose.Promise = global.Promise;
@@ -15,6 +16,7 @@ mongoose.plugin(MongooseDelete, {
 });
 mongoose.plugin(mongoosePagination);
 mongoose.plugin(mongooseAggregatePagination);
+mongoose.plugin(slug);
 mongoose.plugin(mongooseAutopopulate);
 mongoose.set("debug", !vars.isProduction);
 mongoose.connection

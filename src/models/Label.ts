@@ -1,6 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
 import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
-import slug from "mongoose-slug-updater";
 import ILabel from "../interfaces/Label.interface";
 
 // adding schema methods here
@@ -19,9 +18,6 @@ const LabelSchema = new Schema<ILabelDocument, object, ILabelDocument>(
 	},
 	{ timestamps: true }
 );
-
-// schema plugins
-LabelSchema.plugin(slug);
 
 // modal definition
 const LabelModal = model<ILabelDocument, PaginateModel<ILabelDocument> & SoftDeleteModel<ILabelDocument> & ILabelModel>(

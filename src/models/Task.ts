@@ -1,6 +1,5 @@
 import { AggregatePaginateModel, Document, Model, PaginateModel, Schema, model } from "mongoose";
 import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
-import slug from "mongoose-slug-updater";
 import ITask from "../interfaces/Task.interface";
 
 // adding schema methods here
@@ -21,9 +20,6 @@ const TaskSchema = new Schema<ITaskDocument, object, ITaskDocument>(
 	},
 	{ timestamps: true }
 );
-
-// schema plugins
-TaskSchema.plugin(slug);
 
 // modal definition
 const TaskModal = model<

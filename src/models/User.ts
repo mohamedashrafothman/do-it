@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
 import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
-import slug from "mongoose-slug-updater";
 import isEmail from "validator/lib/isEmail.js";
 import IUser from "../interfaces/User.interface";
 import vars from "../utils/vars";
@@ -83,9 +82,6 @@ UserSchema.pre("save", async function (next) {
 	this.password = hash;
 	next();
 });
-
-// schema plugins
-UserSchema.plugin(slug);
 
 // modal definition
 const UserModal = model<IUserDocument, PaginateModel<IUserDocument> & SoftDeleteModel<IUserDocument> & IUserModel>(

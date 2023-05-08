@@ -1,6 +1,5 @@
 import { Document, Model, PaginateModel, Schema, model } from "mongoose";
 import { SoftDeleteInterface, SoftDeleteModel } from "mongoose-delete";
-import slug from "mongoose-slug-updater";
 import IList from "../interfaces/List.interface";
 
 // adding schema methods here
@@ -19,9 +18,6 @@ const ListSchema = new Schema<IListDocument, object, IListDocument>(
 	},
 	{ timestamps: true }
 );
-
-// schema plugins
-ListSchema.plugin(slug);
 
 // modal definition
 const ListModal = model<IListDocument, PaginateModel<IListDocument> & SoftDeleteModel<IListDocument> & IListModel>(
